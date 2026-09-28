@@ -1,3 +1,6 @@
+using Lagerverwaltung.Models;
+using Microsoft.EntityFrameworkCore;
+
 namespace Lagerverwaltung
 {
     public class Program
@@ -8,7 +11,8 @@ namespace Lagerverwaltung
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
-
+            builder.Services.AddDbContext<LagerverwaltungssystemContext>(
+            options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
