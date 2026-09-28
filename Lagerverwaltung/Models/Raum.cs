@@ -15,11 +15,11 @@ public partial class Raum
 
     public virtual Benutzer BenutzerNavigation { get; set; } = null!;
 
-    public virtual ICollection<Lagerbewegungen> LagerbewegungenVonRaumNavigations { get; set; } = new List<Lagerbewegungen>();
+    public virtual ICollection<Lagerbewegungen> VonRaumNavigation { get; set; } = new List<Lagerbewegungen>();
 
-    public virtual ICollection<Lagerbewegungen> LagerbewegungenZuRaumNavigations { get; set; } = new List<Lagerbewegungen>();
+    public virtual ICollection<Lagerbewegungen> ZuRaumNavigation { get; set; } = new List<Lagerbewegungen>();
 
-    public virtual ICollection<RaumArtikel> RaumArtikels { get; set; } = new List<RaumArtikel>();
+    public virtual ICollection<RaumArtikel> RaumArtikelNavigation { get; set; } = new List<RaumArtikel>();
 
     public virtual RaumTyp RaumTypNavigation { get; set; } = null!;
 }

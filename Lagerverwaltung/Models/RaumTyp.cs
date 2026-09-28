@@ -9,5 +9,5 @@ public partial class RaumTyp
 
     public string Name { get; set; } = null!;
 
-    public virtual ICollection<Raum> Raums { get; set; } = new List<Raum>();
+    public virtual ICollection<Raum> Raeume { get; set; } = new List<Raum>();
 }

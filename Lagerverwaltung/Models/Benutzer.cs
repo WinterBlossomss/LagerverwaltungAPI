@@ -13,9 +13,9 @@ public partial class Benutzer
 
     public string Password { get; set; } = null!;
 
-    public virtual ICollection<Lagerbewegungen> Lagerbewegungens { get; set; } = new List<Lagerbewegungen>();
+    public virtual ICollection<Lagerbewegungen> Lagerbewegungen { get; set; } = new List<Lagerbewegungen>();
 
-    public virtual ICollection<Raum> Raums { get; set; } = new List<Raum>();
+    public virtual ICollection<Raum> Raeume { get; set; } = new List<Raum>();
 
     public virtual Rolle RolleNavigation { get; set; } = null!;
 }

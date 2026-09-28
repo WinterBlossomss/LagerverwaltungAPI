@@ -104,7 +104,7 @@ public partial class LagerverwaltungssystemContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("ID");
 
-            entity.HasOne(d => d.BenutzerNavigation).WithMany(p => p.Lagerbewegungens)
+            entity.HasOne(d => d.BenutzerNavigation).WithMany(p => p.Lagerbewegungen)
                 .HasForeignKey(d => d.Benutzer)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Lagerbewegungen_Benutzer");
@@ -114,12 +114,12 @@ public partial class LagerverwaltungssystemContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Lagerbewegungen_BewegungArt");
 
-            entity.HasOne(d => d.VonRaumNavigation).WithMany(p => p.LagerbewegungenVonRaumNavigations)
+            entity.HasOne(d => d.VonRaumNavigation).WithMany(p => p.VonRaumNavigation)
                 .HasForeignKey(d => d.VonRaum)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Lagerbewegungen_Raum");
 
-            entity.HasOne(d => d.ZuRaumNavigation).WithMany(p => p.LagerbewegungenZuRaumNavigations)
+            entity.HasOne(d => d.ZuRaumNavigation).WithMany(p => p.ZuRaumNavigation)
                 .HasForeignKey(d => d.ZuRaum)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Lagerbewegungen_Raum1");
@@ -131,12 +131,12 @@ public partial class LagerverwaltungssystemContext : DbContext
 
             entity.Property(e => e.Id).HasColumnName("ID");
 
-            entity.HasOne(d => d.BenutzerNavigation).WithMany(p => p.Raums)
+            entity.HasOne(d => d.BenutzerNavigation).WithMany(p => p.Raeume)
                 .HasForeignKey(d => d.Benutzer)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Raum_Benutzer");
 
-            entity.HasOne(d => d.RaumTypNavigation).WithMany(p => p.Raums)
+            entity.HasOne(d => d.RaumTypNavigation).WithMany(p => p.Raeume)
                 .HasForeignKey(d => d.RaumTyp)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Raum_Raum");
@@ -153,7 +153,7 @@ public partial class LagerverwaltungssystemContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_RaumArtikel_Artikel");
 
-            entity.HasOne(d => d.RaumNavigation).WithMany(p => p.RaumArtikels)
+            entity.HasOne(d => d.RaumNavigation).WithMany(p => p.RaumArtikelNavigation)
                 .HasForeignKey(d => d.Raum)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_RaumArtikel_Raum");
