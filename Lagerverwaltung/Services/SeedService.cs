@@ -17,7 +17,7 @@ namespace Lagerverwaltung.Services
             {
                 // Ensure the database is ready
                 logger.LogInformation("Ensuring database is created...");
-                await context.Database.EnsureCreatedAsync();
+                //await context.Database.EnsureCreatedAsync();
 
                 // Seed roles
                 logger.LogInformation("Seeding roles...");
