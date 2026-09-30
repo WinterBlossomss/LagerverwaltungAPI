@@ -1,8 +1,85 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Start";
+    var angemeldet = User.Identity?.IsAuthenticated == true;
+    var isAdmin = User.IsInRole(Rollen.Admin);
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<section class="home-hero row g-0 mb-5">
+    <div class="col-lg-7 p-4 p-lg-5 d-flex flex-column justify-content-between gap-4">
+        <div>
+            <div class="page-kicker">BS EVITA · Lager- und Inventarverwaltung</div>
+            <h1 class="display-5 fw-bold mb-3">Lagerverwaltung für die Labore</h1>
+            <p class="lead text-body-secondary mb-0">
+                Alle Gegenstände im Hauptlager und in den Laboren an einem Ort: wer was hat,
+                wo es steht und wann es bewegt wurde.
+            </p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            @if (angemeldet)
+            {
+                <a class="btn btn-primary btn-lg" asp-controller="Dashboard" asp-action="Index">Zum Dashboard</a>
+                @if (isAdmin)
+                {
+                    <a class="btn btn-outline-secondary btn-lg" asp-controller="Uebergabe" asp-action="Create">Neue Ausgabe</a>
+                }
+                else
+                {
+                    <a class="btn btn-outline-secondary btn-lg" asp-controller="Uebergabe" asp-action="Index">Offene Übergaben</a>
+                }
+            }
+            else
+            {
+                <a class="btn btn-primary btn-lg" asp-controller="Account" asp-action="Login">Anmelden</a>
+            }
+        </div>
+    </div>
+    <div class="col-lg-5 home-hero-accent p-4 p-lg-5 d-flex flex-column justify-content-end">
+        <div class="small text-uppercase mb-2 opacity-75" style="letter-spacing:.08em">Der Weg eines Gegenstands</div>
+        <div class="fs-2 fw-bold lh-sm">Hauptlager → Labor → Umbuchungslager → Hauptlager</div>
+    </div>
+</section>
+
+<h2 class="h5 mb-3">So funktioniert es</h2>
+<ol class="home-steps list-unstyled row g-0 mb-5">
+    <li class="col-md-6 col-lg-3">
+        <div class="home-step-num">1</div>
+        <div class="fw-semibold mb-1">Ausgabe</div>
+        <p class="small text-body-secondary mb-0">Der Administrator stellt Gegenstände aus dem Hauptlager für ein Labor bereit.</p>
+    </li>
+    <li class="col-md-6 col-lg-3">
+        <div class="home-step-num">2</div>
+        <div class="fw-semibold mb-1">Übernahme</div>
+        <p class="small text-body-secondary mb-0">Die verantwortliche LehrerIn bestätigt den Empfang digital. Erst dann zählen sie zum Laborinventar.</p>
+    </li>
+    <li class="col-md-6 col-lg-3">
+        <div class="home-step-num">3</div>
+        <div class="fw-semibold mb-1">Rückgabe</div>
+        <p class="small text-body-secondary mb-0">Nicht mehr benötigte Gegenstände gehen aus dem Labor ins Umbuchungslager.</p>
+    </li>
+    <li class="col-md-6 col-lg-3">
+        <div class="home-step-num">4</div>
+        <div class="fw-semibold mb-1">Einbuchung</div>
+        <p class="small text-body-secondary mb-0">Der Administrator nimmt die Rückgabe entgegen und bucht sie wieder ins Hauptlager.</p>
+    </li>
+</ol>
+
+<h2 class="h5 mb-3">Rollen</h2>
+<div class="row g-0 home-roles mb-4">
+    <div class="col-md-6">
+        <div class="page-kicker">Administrator</div>
+        <ul class="small mb-0 ps-3">
+            <li>Sieht das gesamte Inventar aller Lager und Labore</li>
+            <li>Erfasst Artikel und gibt sie an Labore aus</li>
+            <li>Bearbeitet Rückgaben im Umbuchungslager</li>
+            <li>Sieht die vollständige Historie der Lagerbewegungen</li>
+        </ul>
+    </div>
+    <div class="col-md-6">
+        <div class="page-kicker">LehrerIn</div>
+        <ul class="small mb-0 ps-3">
+            <li>Sieht das Inventar der eigenen Labore</li>
+            <li>Bestätigt die Übernahme bereitgestellter Gegenstände</li>
+            <li>Gibt Gegenstände ins Umbuchungslager zurück</li>
+        </ul>
+    </div>
 </div>
