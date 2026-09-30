@@ -61,9 +61,11 @@ namespace Lagerverwaltung.Controllers
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(identity));
+                new ClaimsPrincipal(identity),
+                new AuthenticationProperties { IsPersistent = model.RememberMe });
 
-            return RedirectToAction("Index", "Home");
+            if (Url.IsLocalUrl(returnUrl)) return Redirect(returnUrl);
+            return RedirectToAction("Index", "Dashboard");
         }
 
         [Authorize]

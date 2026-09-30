@@ -134,7 +134,7 @@ namespace Lagerverwaltung.Services
                 var ausgaben = await OffeneAusgaben().Select(b => b.ZuRaum).ToListAsync();
                 var rueckgaben = await OffeneRueckgaben().Select(b => b.ZuRaum).ToListAsync();
 
-                return raeume.Select(r => new StandortKachel
+                return raeume.Select(r => new RaumUebersicht
                 {
                     RaumId = r.ID,
                     Name = r.Anzeigename,

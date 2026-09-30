@@ -4,15 +4,17 @@ namespace Lagerverwaltung.ViewModels
 {
     public class LoginViewModel
     {
-        [Required(ErrorMessage = "Please enter your username.")]
+        [Required(ErrorMessage = "Bitte geben Sie Ihren Benutzernamen ein.")]
         [DataType(DataType.Text)]
+        [Display(Name = "Benutzername")]
         public string Username { get; set; }
 
-        [Required(ErrorMessage = "Please enter your password.")]
+        [Required(ErrorMessage = "Bitte geben Sie Ihr Passwort ein.")]
         [DataType(DataType.Password)]
+        [Display(Name = "Passwort")]
         public string Password { get; set; }
 
-        [Display(Name = "Remember Me?")]
+        [Display(Name = "Angemeldet bleiben")]
         public bool RememberMe { get; set; }
     }
 }

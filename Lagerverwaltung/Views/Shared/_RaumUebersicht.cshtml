@@ -1,0 +1,28 @@
+﻿@model RaumUebersicht
+<a class="tile h-100" asp-controller="@(Model.Typ == RaumTypen.Labor ? "Labor" : Model.Typ == RaumTypen.Umbuchungslager ? "Umbuchung" : "Inventar")"
+   asp-action="Index"
+   asp-route-id="@(Model.Typ == RaumTypen.Labor ? Model.RaumId.ToString() : null)"
+   asp-route-RaumId="@(Model.Typ == RaumTypen.Hauptlager ? Model.RaumId.ToString() : null)">
+    <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap mb-3">
+        <div>
+            <div class="page-kicker text-body-secondary mb-0">@Model.Typ</div>
+            <div class="h4 mb-0 fw-bold">@Model.Name</div>
+        </div>
+        @if (Model.OffeneUebergaben > 0)
+        {
+            <span class="badge text-bg-warning">@Model.OffeneUebergaben Übergabe@(Model.OffeneUebergaben == 1 ? "" : "n") offen</span>
+        }
+        @if (Model.OffeneRueckgaben > 0)
+        {
+            <span class="badge text-bg-warning">@Model.OffeneRueckgaben Rückgabe@(Model.OffeneRueckgaben == 1 ? "" : "n")</span>
+        }
+    </div>
+    <div class="row g-0 border-top pt-2 mb-2">
+        <div class="col"><div class="small text-body-secondary">Positionen</div><div class="fs-5 fw-semibold">@Model.Positionen</div></div>
+        <div class="col"><div class="small text-body-secondary">Stück</div><div class="fs-5 fw-semibold">@Model.Stueck</div></div>
+    </div>
+    @if (Model.Verantwortlich != null)
+    {
+        <div class="small text-body-secondary">Verantwortlich: <span class="fw-semibold text-body">@Model.Verantwortlich</span></div>
+    }
+</a>
