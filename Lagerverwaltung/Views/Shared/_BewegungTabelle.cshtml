@@ -1,0 +1,42 @@
+﻿@model IEnumerable<Lagerbewegungen>
+@if (!Model.Any())
+{
+    <p class="text-body-secondary border-top pt-3">Keine Lagerbewegungen gefunden.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Art</th>
+                    <th>Gegenstand</th>
+                    <th class="text-end">Menge</th>
+                    <th>Von</th>
+                    <th>Nach</th>
+                    <th>Benutzer</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model)
+                {
+                    <tr>
+                        <td class="text-nowrap">@b.Datum.ToString("dd.MM.yyyy")</td>
+                        <td class="fw-semibold">@b.BewegungNavigation?.Name</td>
+                        <td>
+                            <a asp-controller="Artikel" asp-action="Details" asp-route-id="@b.Artikel" class="link-body-emphasis text-decoration-none">@b.ArtikelNavigation?.Name</a>
+                            @if (b.ArtikelNavigation?.SerienNum != null) { <div class="small text-body-secondary">SN @b.ArtikelNavigation.SerienNum</div> }
+                        </td>
+                        <td class="text-end">@(b.ArtikelMenge ?? 1)</td>
+                        <td>@b.VonRaumNavigation?.Anzeigename</td>
+                        <td>@b.ZuRaumNavigation?.Anzeigename</td>
+                        <td>@b.BenutzerNavigation?.Username</td>
+                        <td><partial name="_BewegungStatus" model="b" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

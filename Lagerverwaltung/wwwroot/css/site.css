@@ -29,3 +29,97 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* ---------- Lagerverwaltung ---------- */
+
+.navbar .nav-link.active {
+    color: var(--bs-primary);
+    font-weight: 600;
+}
+
+/* Seitenkopf: Kicker + Titel links, Aktionen rechts */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--bs-border-color);
+}
+
+.page-kicker {
+    font-size: .75rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--bs-primary);
+    margin-bottom: .25rem;
+}
+
+/* Kennzahlen-Zeile */
+.stat-row {
+    border-bottom: 2px solid var(--bs-border-color);
+}
+
+.stat {
+    padding: 0 1.5rem 1.25rem 0;
+}
+
+    .stat + .stat {
+        padding-left: 1.5rem;
+        border-left: 1px solid var(--bs-border-color);
+    }
+
+.stat-label, .stat-sub {
+    font-size: .8rem;
+    color: var(--bs-secondary-color);
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1.15;
+}
+
+/* Tabellen */
+.table > thead th {
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+    border-bottom-width: 2px;
+    white-space: nowrap;
+}
+
+/* Kacheln für Lager und Labore */
+.tile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    border-top: 2px solid var(--bs-border-color);
+    border-left: 1px solid var(--bs-border-color);
+}
+
+.tile {
+    display: block;
+    padding: 1.25rem;
+    color: inherit;
+    text-decoration: none;
+    border-right: 1px solid var(--bs-border-color);
+    border-bottom: 1px solid var(--bs-border-color);
+}
+
+    .tile:hover {
+        background: var(--bs-tertiary-bg);
+        color: inherit;
+    }
+
+/* Seitenleiste bei Ausgabe / Rückgabe */
+.summary-panel {
+    background: var(--bs-tertiary-bg);
+    border-top: 2px solid var(--bs-emphasis-color);
+    padding: 1.25rem;
+    position: sticky;
+    top: 1rem;
+}

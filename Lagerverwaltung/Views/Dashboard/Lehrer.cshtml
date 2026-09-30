@@ -5,9 +5,67 @@
 
 <div class="page-header">
     <div>
-        <div class="page-kicker">LehrerIn - @DateTime.Now.ToString("dd.MM.yyyy")</div>
+        <div class="page-kicker">LehrerIn · @DateTime.Now.ToString("dd.MM.yyyy")</div>
         <h1 class="h2 mb-0">Guten Tag, @Model.Name</h1>
     </div>
     <a class="btn btn-outline-secondary" asp-controller="Rueckgabe" asp-action="Index">Gegenstände zurückgeben</a>
 </div>
 
+<div class="row g-0 stat-row mb-4">
+    <div class="col-12 col-md-4 stat">
+        <div class="stat-label">Offene Übergaben</div>
+        <div class="stat-value text-danger">@Model.OffeneUebergaben.Count</div>
+        <div class="stat-sub">bitte Übernahme bestätigen</div>
+    </div>
+    <div class="col-6 col-md-4 stat">
+        <div class="stat-label">Gegenstände in meinen Laboren</div>
+        <div class="stat-value">@Model.StueckInLaboren</div>
+        <div class="stat-sub">@Model.PositionenInLaboren Positionen</div>
+    </div>
+    <div class="col-6 col-md-4 stat">
+        <div class="stat-label">Rückgaben unterwegs</div>
+        <div class="stat-value">@Model.RueckgabenUnterwegs</div>
+        <div class="stat-sub">im Umbuchungslager</div>
+    </div>
+</div>
+
+<h2 class="h5 mb-2">Zur Übernahme bereit</h2>
+@if (!Model.OffeneUebergaben.Any())
+{
+    <p class="text-body-secondary border-top pt-3 mb-5">Keine offenen Übergaben.</p>
+}
+else
+{
+    <ul class="list-group list-group-flush border-top mb-5">
+        @foreach (var b in Model.OffeneUebergaben)
+        {
+            <li class="list-group-item px-0 d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                <div>
+                    <div class="fw-semibold">
+                        @(b.ArtikelMenge ?? 1) × @b.ArtikelNavigation.Name
+                        @if (b.ArtikelNavigation.SerienNum != null) { <span class="fw-normal text-body-secondary">· SN @b.ArtikelNavigation.SerienNum</span> }
+                    </div>
+                    <div class="small text-body-secondary">für @b.ZuRaumNavigation.Anzeigename · bereitgestellt von @b.BenutzerNavigation.Username am @b.Datum.ToString("dd.MM.yyyy")</div>
+                </div>
+                <form asp-controller="Uebergabe" asp-action="Bestaetigen" asp-route-id="@b.ID" asp-route-returnUrl="@Url.Action("Index", "Dashboard")" method="post">
+                    <button type="submit" class="btn btn-primary btn-sm">Übernahme bestätigen</button>
+                </form>
+            </li>
+        }
+    </ul>
+}
+
+<h2 class="h5 mb-2">Meine Labore</h2>
+@if (!Model.Labore.Any())
+{
+    <p class="text-body-secondary border-top pt-3">Ihnen ist noch kein Labor zugeordnet.</p>
+}
+else
+{
+    <div class="tile-grid">
+        @foreach (var l in Model.Labore)
+        {
+            <partial name="_RaumUebersicht" model="l" />
+        }
+    </div>
+}
