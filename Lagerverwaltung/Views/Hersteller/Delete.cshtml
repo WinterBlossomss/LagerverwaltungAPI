@@ -1,0 +1,27 @@
+﻿@model HerstellerDetailsViewModel
+@{
+    ViewData["Title"] = "Hersteller löschen";
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Hersteller löschen</div>
+        <h1 class="h2 mb-0">@Model.Hersteller.Name</h1>
+    </div>
+</div>
+
+@if (Model.KannGeloeschtWerden)
+{
+    <p>Soll dieser Hersteller wirklich gelöscht werden?</p>
+    <form asp-action="Delete" asp-route-id="@Model.Hersteller.ID" method="post" class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger">Löschen</button>
+        <a asp-action="Details" asp-route-id="@Model.Hersteller.ID" class="btn btn-outline-secondary">Abbrechen</a>
+    </form>
+}
+else
+{
+    <div class="alert alert-warning">
+        Dieser Hersteller wird noch von @Model.Kategorien.Count Kategorie(n) verwendet und kann nicht gelöscht werden.
+    </div>
+    <a asp-action="Details" asp-route-id="@Model.Hersteller.ID" class="btn btn-outline-secondary">Zurück</a>
+}

@@ -1,0 +1,27 @@
+﻿@model LagerViewModel
+@{
+    ViewData["Title"] = "Lager und Labore";
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Standorte</div>
+        <h1 class="h2 mb-0">Lager und Labore</h1>
+    </div>
+</div>
+
+<h2 class="h6 text-uppercase text-body-secondary mb-2">Lager</h2>
+<div class="tile-grid mb-5">
+    @foreach (var k in Model.Lager)
+    {
+        <partial name="_RaumUebersicht" model="k" />
+    }
+</div>
+
+<h2 class="h6 text-uppercase text-body-secondary mb-2">Labore / Räume</h2>
+<div class="tile-grid">
+    @foreach (var k in Model.Labore)
+    {
+        <partial name="_RaumUebersicht" model="k" />
+    }
+</div>

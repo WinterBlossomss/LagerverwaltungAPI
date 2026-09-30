@@ -1,0 +1,102 @@
+﻿@model UebergabenViewModel
+@{
+    ViewData["Title"] = "Übergaben";
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Übergabe · Schritt 2 von 2</div>
+        <h1 class="h2 mb-0">Übernahme bestätigen</h1>
+    </div>
+</div>
+
+@if (!Model.Offen.Any())
+{
+    <p class="text-body-secondary mb-5">Keine offenen Übergaben. Neue Übergaben erscheinen hier, sobald der Administrator sie bereitstellt.</p>
+}
+
+@foreach (var gruppe in Model.Offen.GroupBy(b => b.ZuRaum))
+{
+    var raum = gruppe.First().ZuRaumNavigation;
+    <div class="row g-4 pb-4 mb-4 border-bottom border-2">
+        <div class="col-lg-3">
+            <div class="page-kicker">@gruppe.Count() Position@(gruppe.Count() == 1 ? "" : "en")</div>
+            <div class="h4 fw-bold mb-1">@raum.Anzeigename</div>
+            <div class="small text-body-secondary">bereitgestellt ab @gruppe.Min(b => b.Datum).ToString("dd.MM.yyyy")</div>
+        </div>
+        <div class="col-lg-9">
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Gegenstand</th>
+                            <th>Seriennummer</th>
+                            <th class="text-end">Menge</th>
+                            <th>Bereitgestellt</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var b in gruppe)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@b.ArtikelNavigation.Name</td>
+                                <td>@(b.ArtikelNavigation.SerienNum?.ToString() ?? "ohne Seriennummer")</td>
+                                <td class="text-end">@(b.ArtikelMenge ?? 1)</td>
+                                <td>@b.Datum.ToString("dd.MM.yyyy") · @b.BenutzerNavigation.Username</td>
+                                <td class="text-end">
+                                    <form asp-action="Bestaetigen" asp-route-id="@b.ID" method="post">
+                                        <button type="submit" class="btn btn-outline-primary btn-sm">Einzeln bestätigen</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <form asp-action="BestaetigenAlle" asp-route-raumId="@raum.ID" method="post" class="d-flex flex-column gap-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="erhalten-@raum.ID" required />
+                    <label class="form-check-label" for="erhalten-@raum.ID">Ich habe die Gegenstände vollständig und unbeschädigt erhalten.</label>
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary">Alle Positionen für @raum.Anzeigename bestätigen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+}
+
+<h2 class="h5 mb-2">Zuletzt bestätigt</h2>
+@if (!Model.Bestaetigt.Any())
+{
+    <p class="text-body-secondary border-top pt-3">Noch keine bestätigten Übergaben.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Bestätigt am</th>
+                    <th>Raum</th>
+                    <th>Gegenstand</th>
+                    <th>Seriennummer</th>
+                    <th class="text-end">Menge</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model.Bestaetigt)
+                {
+                    <tr>
+                        <td>@b.Datum.ToString("dd.MM.yyyy")</td>
+                        <td>@b.ZuRaumNavigation.Anzeigename</td>
+                        <td>@b.ArtikelNavigation.Name</td>
+                        <td>@(b.ArtikelNavigation.SerienNum?.ToString() ?? "—")</td>
+                        <td class="text-end">@(b.ArtikelMenge ?? 1)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

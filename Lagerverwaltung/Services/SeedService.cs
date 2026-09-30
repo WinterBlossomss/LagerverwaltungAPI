@@ -6,6 +6,13 @@ namespace Lagerverwaltung.Services
 {
     public static class SeedService
     {
+        /// <summary>
+        /// Seeds the database with initial data, including roles, users, room types, movement types, rooms, articles, and test data.
+        /// This method is intended to be called during application startup to ensure that the database has the necessary
+        /// initial data for the application to function correctly.
+        /// </summary>
+        /// <param name="serviceProvider">The service provider.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public static async Task SeedDatabase(IServiceProvider serviceProvider)
         {
             using var scope = serviceProvider.CreateScope();
@@ -61,6 +68,23 @@ namespace Lagerverwaltung.Services
             }
         }
 
+        /// <summary>
+        /// Seeds the database with test data, including categories, articles, current stock, and movement records.
+        /// This method is intended to be called during application startup to ensure that the database has the
+        /// necessary test data for development and testing purposes.
+        /// </summary>
+        /// <param name="context">The database context.</param>
+        /// <param name="admin">The admin user.</param>
+        /// <param name="dennis">The Dennis user.</param>
+        /// <param name="emily">The Emily user.</param>
+        /// <param name="michael">The Michael user.</param>
+        /// <param name="haupt">The main warehouse.</param>
+        /// <param name="umb">The umb warehouse.</param>
+        /// <param name="r309">The r309 room.</param>
+        /// <param name="r310">The r310 room.</param>
+        /// <param name="r311">The r311 room.</param>
+        /// <param name="r312">The r312 room.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private static async Task SeedTestdatenAsync(LagerverwaltungssystemContext context,
             Benutzer admin, Benutzer dennis, Benutzer emily, Benutzer michael,
             Raum haupt, Raum umb, Raum r309, Raum r310, Raum r311, Raum r312)
@@ -168,6 +192,14 @@ namespace Lagerverwaltung.Services
             await context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Gets an existing role by name or adds a new role if it doesn't exist.
+        /// This method checks the database for a role with the specified name, and if it doesn't find one,
+        /// it creates a new role and saves it to the database. The method returns the existing or newly created role.
+        /// </summary>
+        /// <param name="context">The database context.</param>
+        /// <param name="name">The name of the role.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private static async Task<Rolle> GetOrAddRolleAsync(LagerverwaltungssystemContext context, string name)
         {
             var rolle = await context.Rolles.FirstOrDefaultAsync(r => r.Name == name);
@@ -180,6 +212,12 @@ namespace Lagerverwaltung.Services
             return rolle;
         }
 
+        /// <summary>
+        /// Gets an existing room type by name or adds a new room type if it doesn't exist.
+        /// </summary>
+        /// <param name="context">The database context.</param>
+        /// <param name="name">The name of the room type.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private static async Task<RaumTyp> GetOrAddRaumTypAsync(LagerverwaltungssystemContext context, string name)
         {
             var typ = await context.RaumTyps.FirstOrDefaultAsync(r => r.Name == name);
@@ -192,6 +230,12 @@ namespace Lagerverwaltung.Services
             return typ;
         }
 
+        /// <summary>
+        /// Gets an existing movement type by name or adds a new movement type if it doesn't exist.
+        /// </summary>
+        /// <param name="context">The database context.</param>
+        /// <param name="name">The name of the movement type.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private static async Task<BewegungArt> GetOrAddBewegungArtAsync(LagerverwaltungssystemContext context, string name)
         {
             var art = await context.BewegungArts.FirstOrDefaultAsync(r => r.Name == name);
@@ -204,6 +248,14 @@ namespace Lagerverwaltung.Services
             return art;
         }
 
+        /// <summary>
+        /// Gets an existing room by type and number or adds a new room if it doesn't exist.
+        /// </summary>
+        /// <param name="context">The database context.</param>
+        /// <param name="typName">The name of the room type.</param>
+        /// <param name="raumNum">The number of the room.</param>
+        /// <param name="verantwortlich">The user responsible for the room.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private static async Task<Raum> GetOrAddRaumAsync(LagerverwaltungssystemContext context, string typName, int? raumNum, Benutzer verantwortlich)
         {
             var typ = await context.RaumTyps.FirstAsync(t => t.Name == typName);
@@ -217,6 +269,16 @@ namespace Lagerverwaltung.Services
             return raum;
         }
 
+        /// <summary>
+        /// Adds a new user to the database with the specified username, password, and role.
+        /// </summary>
+        /// <param name="context">The database context.</param>
+        /// <param name="hasher">The password hasher.</param>
+        /// <param name="logger">The logger.</param>
+        /// <param name="username">The username of the new user.</param>
+        /// <param name="password">The password of the new user.</param>
+        /// <param name="rolle">The role of the new user.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private static async Task AddUserAsync(
             LagerverwaltungssystemContext context,
             IPasswordHasher<Benutzer> hasher,

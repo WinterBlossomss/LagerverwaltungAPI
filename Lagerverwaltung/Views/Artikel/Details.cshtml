@@ -1,52 +1,48 @@
-@model Lagerverwaltung.Models.Artikel
-
+@model ArtikelDetailsViewModel
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = Model.Artikel.Name;
+    var a = Model.Artikel;
 }
 
-<h1>Details</h1>
+<div class="page-header">
+    <div>
+        <div class="page-kicker">@a.KategorieNavigation?.Name</div>
+        <h1 class="h2 mb-0">@a.Name</h1>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@a.ID" class="btn btn-outline-secondary">Bearbeiten</a>
+        <a asp-action="Delete" asp-route-id="@a.ID" class="btn btn-outline-danger">Löschen</a>
+    </div>
+</div>
 
-<div>
-    <h4>Artikel</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Name)
-        </dd>
-    </dl>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.SerienNum)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.SerienNum)
-        </dd>
-    </dl>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Kategorie)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Kategorie)
-        </dd>
-    </dl>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.KategorieNavigation)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.KategorieNavigation)
-        </dd>
-    </dl>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.RaumArtikels)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.RaumArtikels)
-        </dd>
-    </dl>
+<div class="row g-0 stat-row mb-4">
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Seriennummer</div><div class="stat-value fs-3">@(a.SerienNum?.ToString() ?? "—")</div></div>
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Hersteller</div><div class="stat-value fs-3">@(a.KategorieNavigation?.HerstellerNavigation?.Name ?? "—")</div></div>
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Bestand gesamt</div><div class="stat-value fs-3">@Model.Standorte.Sum(s => s.Menge)</div></div>
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Standorte</div><div class="stat-value fs-3">@Model.Standorte.Count</div></div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.ID">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+<h2 class="h5 mb-2">Aktueller Standort</h2>
+@if (!Model.Standorte.Any())
+{
+    <p class="text-body-secondary border-top pt-3 mb-5">Kein Bestand (evtl. in einer offenen Übergabe).</p>
+}
+else
+{
+    <table class="table align-middle mb-5">
+        <thead><tr><th>Standort</th><th>Verantwortlich</th><th class="text-end">Menge</th></tr></thead>
+        <tbody>
+            @foreach (var s in Model.Standorte)
+            {
+                <tr>
+                    <td>@s.RaumNavigation.Anzeigename</td>
+                    <td>@s.RaumNavigation.BenutzerNavigation?.Username</td>
+                    <td class="text-end">@s.Menge</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<h2 class="h5 mb-2">Lagerbewegungen</h2>
+<partial name="_BewegungTabelle" model="Model.Bewegungen" />

@@ -1,0 +1,112 @@
+﻿@model LaborViewModel
+@{
+    ViewData["Title"] = Model.Raum?.Anzeigename ?? "Labor";
+    var isAdmin = User.IsInRole(Rollen.Admin);
+}
+
+@if (Model.Raum == null)
+{
+    <div class="page-header"><h1 class="h2 mb-0">Labor</h1></div>
+    <p class="text-body-secondary">Ihnen ist noch kein Labor zugeordnet.</p>
+    return;
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Labor · verantwortlich @Model.Raum.BenutzerNavigation?.Username</div>
+        <h1 class="h2 mb-0">@Model.Raum.Anzeigename</h1>
+    </div>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        @if (Model.Auswahl.Count > 1)
+        {
+            <div class="btn-group" role="group" aria-label="Labor wählen">
+                @foreach (var l in Model.Auswahl)
+                {
+                    <a asp-action="Index" asp-route-id="@l.ID" class="btn @(l.ID == Model.Raum.ID ? "btn-dark" : "btn-outline-secondary")">@l.Anzeigename</a>
+                }
+            </div>
+        }
+        @if (Model.DarfZurueckgeben)
+        {
+            <a class="btn btn-primary" asp-controller="Rueckgabe" asp-action="Index" asp-route-raumId="@Model.Raum.ID">Rückgabe starten</a>
+        }
+        @if (isAdmin)
+        {
+            <a class="btn btn-primary" asp-controller="Uebergabe" asp-action="Create" asp-route-raumId="@Model.Raum.ID">Gegenstände ausgeben</a>
+        }
+    </div>
+</div>
+
+<div class="row g-0 stat-row mb-4">
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Positionen</div><div class="stat-value">@Model.Positionen</div></div>
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Stück gesamt</div><div class="stat-value">@Model.Stueck</div></div>
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">mit Seriennummer</div><div class="stat-value">@Model.MitSeriennummer</div></div>
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Offene Übergaben</div><div class="stat-value text-danger">@Model.OffeneUebergaben.Count</div></div>
+</div>
+
+@if (Model.OffeneUebergaben.Any())
+{
+    <h2 class="h5 mb-2">Offene Übergaben für diesen Raum</h2>
+    <ul class="list-group list-group-flush border-top mb-5">
+        @foreach (var b in Model.OffeneUebergaben)
+        {
+            <li class="list-group-item px-0 d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                <div>
+                    <div class="fw-semibold">@(b.ArtikelMenge ?? 1) × @b.ArtikelNavigation.Name @if (b.ArtikelNavigation.SerienNum != null) { <span class="fw-normal text-body-secondary">· SN @b.ArtikelNavigation.SerienNum</span> }</div>
+                    <div class="small text-body-secondary">bereitgestellt am @b.Datum.ToString("dd.MM.yyyy")</div>
+                </div>
+                @if (Model.DarfBestaetigen)
+                {
+                    <form asp-controller="Uebergabe" asp-action="Bestaetigen" asp-route-id="@b.ID" asp-route-returnUrl="@Url.Action("Index", "Labor", new { id = Model.Raum.ID })" method="post">
+                        <button type="submit" class="btn btn-primary btn-sm">Übernahme bestätigen</button>
+                    </form>
+                }
+                else
+                {
+                    <span class="badge text-bg-warning">Wartet auf @b.ZuRaumNavigation.BenutzerNavigation?.Username</span>
+                }
+            </li>
+        }
+    </ul>
+}
+
+<div class="d-flex justify-content-between align-items-end gap-3 flex-wrap mb-2">
+    <h2 class="h5 mb-0">Inventar</h2>
+    <form method="get" asp-action="Index" asp-route-id="@Model.Raum.ID" class="d-flex gap-2">
+        <input name="suche" value="@Model.Suche" class="form-control" placeholder="Im Labor suchen" />
+        <button type="submit" class="btn btn-outline-secondary">Suchen</button>
+    </form>
+</div>
+
+@if (!Model.Bestand.Any())
+{
+    <p class="text-body-secondary border-top pt-3">Keine Gegenstände gefunden.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Bezeichnung</th>
+                    <th>Kategorie</th>
+                    <th>Seriennummer</th>
+                    <th class="text-end">Menge</th>
+                    <th>Übernommen am</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ra in Model.Bestand)
+                {
+                    <tr>
+                        <td class="fw-semibold">@ra.ArtNavigation.Name</td>
+                        <td>@ra.ArtNavigation.KategorieNavigation?.Name</td>
+                        <td>@(ra.ArtNavigation.SerienNum?.ToString() ?? "—")</td>
+                        <td class="text-end">@ra.Menge</td>
+                        <td>@(Model.UebernommenAm.TryGetValue(ra.Art, out var d) ? d.ToString("dd.MM.yyyy") : "—")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,54 @@
+﻿@model HerstellerListeViewModel
+@{
+    ViewData["Title"] = "Hersteller";
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Stammdaten</div>
+        <h1 class="h2 mb-0">Hersteller</h1>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-secondary" asp-controller="Artikel" asp-action="Index">Artikel</a>
+        <a class="btn btn-primary" asp-action="Create">Hersteller anlegen</a>
+    </div>
+</div>
+
+<form method="get" asp-action="Index" class="d-flex gap-2 mb-3" style="max-width: 32rem;">
+    <input name="suche" value="@Model.Suche" class="form-control" placeholder="Hersteller suchen" />
+    <button type="submit" class="btn btn-secondary">Suchen</button>
+</form>
+
+@if (!Model.Hersteller.Any())
+{
+    <p class="text-body-secondary border-top pt-3">Keine Hersteller gefunden.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th class="text-end">Kategorien</th>
+                    <th class="text-end">Artikel</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var h in Model.Hersteller)
+                {
+                    <tr>
+                        <td class="fw-semibold">@h.Name</td>
+                        <td class="text-end">@h.AnzahlKategorien</td>
+                        <td class="text-end">@h.AnzahlArtikel</td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Details" asp-route-id="@h.ID" class="btn btn-sm btn-outline-secondary">Details</a>
+                            <a asp-action="Edit" asp-route-id="@h.ID" class="btn btn-sm btn-outline-secondary">Bearbeiten</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

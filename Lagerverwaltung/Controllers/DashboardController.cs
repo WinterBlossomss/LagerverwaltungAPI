@@ -19,8 +19,13 @@ namespace Lagerverwaltung.Controllers
             _lager = lager;
         }
 
+        /// <summary>
+        /// Dashboard für Admins und Lehrer anzeigen
+        /// </summary>
+        /// <returns></returns>
         public async Task<IActionResult> Index()
         {
+            // Admin-Dashboard anzeigen
             if (User.IsInRole(Rollen.Admin))
             {
                 var haupt = await _lager.GetLagerAsync(RaumTypen.Hauptlager);
@@ -40,6 +45,7 @@ namespace Lagerverwaltung.Controllers
                 return View("Admin", vm);
             }
 
+            // Lehrer-Dashboard anzeigen
             var uid = User.GetBenutzerId();
             var labore = await _lager.Labore().Where(r => r.Benutzer == uid).ToListAsync();
             var ids = labore.Select(l => l.ID).ToList();

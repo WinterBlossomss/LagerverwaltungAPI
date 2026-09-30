@@ -1,4 +1,5 @@
-﻿using Lagerverwaltung.Models;
+﻿#nullable disable
+using Lagerverwaltung.Models;
 
 namespace Lagerverwaltung.ViewModels
 {

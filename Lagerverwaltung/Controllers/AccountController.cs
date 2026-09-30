@@ -21,6 +21,14 @@ namespace Lagerverwaltung.Controllers
             _passwordHasher = passwordHasher;
         }
 
+        //Difference between the two methods is that the first one is a GET method that returns the login view,
+        //while the second one is a POST method that handles the login form submission and performs authentication.
+
+        /// <summary>
+        /// Login
+        /// </summary>
+        /// <param name="returnUrl"></param>
+        /// <returns></returns>
         [AllowAnonymous]
         [HttpGet]
         public IActionResult Login(string returnUrl = null)
@@ -33,7 +41,8 @@ namespace Lagerverwaltung.Controllers
         /// <summary>
         /// Login
         /// </summary>
-        /// <param name="model"></param>
+        /// <param name="model">The login view model.</param>
+        /// <param name="returnUrl">The URL to redirect to after login.</param>
         /// <returns></returns>
         [AllowAnonymous]
         [HttpPost]
@@ -48,6 +57,7 @@ namespace Lagerverwaltung.Controllers
                 .Include(b => b.RolleNavigation)
                 .FirstOrDefaultAsync(b => b.Username == model.Username);
 
+            //Checks if User is null or Password is incorrect
             if (benutzer == null ||
                 _passwordHasher.VerifyHashedPassword(benutzer, benutzer.Password, model.Password)
                     == PasswordVerificationResult.Failed)
@@ -56,6 +66,7 @@ namespace Lagerverwaltung.Controllers
                 return View(model);
             }
 
+            // Create claims for the authenticated user
             var claims = new List<Claim>
             {
                 new(ClaimTypes.NameIdentifier, benutzer.ID.ToString()),
@@ -63,16 +74,22 @@ namespace Lagerverwaltung.Controllers
                 new(ClaimTypes.Role, benutzer.RolleNavigation.Name)
             };
 
+            // Create a claims identity and sign in the user
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(identity),
                 new AuthenticationProperties { IsPersistent = model.RememberMe });
 
+            // Redirect to the return URL if it's a local URL, otherwise redirect to the dashboard
             if (Url.IsLocalUrl(returnUrl)) return Redirect(returnUrl);
             return RedirectToAction("Index", "Dashboard");
         }
 
+        /// <summary>
+        /// Logout
+        /// </summary>
+        /// <returns></returns>
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> Logout()
@@ -81,6 +98,10 @@ namespace Lagerverwaltung.Controllers
             return RedirectToAction("Login");
         }
 
+        /// <summary>
+        /// Access Denied
+        /// </summary>
+        /// <returns></returns>
         [AllowAnonymous]
         public IActionResult AccessDenied() => View();
     }

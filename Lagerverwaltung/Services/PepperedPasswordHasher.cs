@@ -10,10 +10,11 @@ namespace Lagerverwaltung.Services
 
         /// <summary>
         /// IConfiguration is the built-in ASP.NET Core interface for accessing configuration settings.
-        /// It allows you to retrieve values from various configuration sources, such as appsettings.json, environment variables, and user secrets.
+        /// It allows you to retrieve values from various configuration sources, such as appsettings.json,
+        /// environment variables, and user secrets.
         /// </summary>
-        /// <param name="configuration"></param>
-        /// <exception cref="InvalidOperationException"></exception>
+        /// <param name="configuration">The configuration object.</param>
+        /// <exception cref="InvalidOperationException">Thrown when the pepper is not configured.</exception>
         public PepperedPasswordHasher(IConfiguration configuration)
         {
             _pepper = configuration["Security:Pepper"]
@@ -23,9 +24,9 @@ namespace Lagerverwaltung.Services
         /// <summary>
         /// Gets called when user registers or sets a password
         /// </summary>
-        /// <param name="user"></param>
-        /// <param name="password"></param>
-        /// <returns></returns>
+        /// <param name="user">The user for whom to hash the password.</param>
+        /// <param name="password">The password to hash.</param>
+        /// <returns>The hashed password.</returns>
         public string HashPassword(Benutzer user, string password)
         {
             //adds pepper to the password
@@ -34,12 +35,13 @@ namespace Lagerverwaltung.Services
         }
 
         /// <summary>
-        /// Gets called at login, it adds the pepper to the user provided password and checks if it matches the hashed password in the database
+        /// Gets called at login, it adds the pepper to the user provided password and checks if it
+        /// matches the hashed password in the database
         /// </summary>
-        /// <param name="user"></param>
-        /// <param name="hashedPassword"></param>
-        /// <param name="providedPassword"></param>
-        /// <returns></returns>
+        /// <param name="user">The user for whom to verify the password.</param>
+        /// <param name="hashedPassword">The hashed password from the database.</param>
+        /// <param name="providedPassword">The password provided by the user.</param>
+        /// <returns>The result of the verification.</returns>
         public PasswordVerificationResult VerifyHashedPassword(
             Benutzer user, string hashedPassword, string providedPassword)
         {
