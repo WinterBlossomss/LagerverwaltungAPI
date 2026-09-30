@@ -31,6 +31,7 @@ namespace Lagerverwaltung.Services
                 await AddUserAsync(context, hasher, logger, "Dennis", "123", lehrerRolle);
                 await AddUserAsync(context, hasher, logger, "Emily", "123", lehrerRolle);
                 await AddUserAsync(context, hasher, logger, "Michael", "123", lehrerRolle);
+                await AddUserAsync(context, hasher, logger, "Sarah", "123", lehrerRolle);
 
                 logger.LogInformation("Seeding Stammdaten...");
                 foreach (var t in new[] { RaumTypen.Hauptlager, RaumTypen.Umbuchungslager, RaumTypen.Labor })
@@ -43,20 +44,22 @@ namespace Lagerverwaltung.Services
                 var dennis = await context.Benutzers.FirstAsync(b => b.Username == "Dennis");
                 var emily = await context.Benutzers.FirstAsync(b => b.Username == "Emily");
                 var michael = await context.Benutzers.FirstAsync(b => b.Username == "Michael");
+                var sarah = await context.Benutzers.FirstAsync(b => b.Username == "Sarah");
 
                 logger.LogInformation("Seeding rooms...");
                 var haupt = await GetOrAddRaumAsync(context, RaumTypen.Hauptlager, null, admin);
                 var umb = await GetOrAddRaumAsync(context, RaumTypen.Umbuchungslager, null, admin);
+                // 312 zuerst: in bestehenden DBs gehört 312 noch Dennis und wird hier an Sarah umgehängt
+                var r312 = await GetOrAddRaumAsync(context, RaumTypen.Labor, 312, sarah);
                 var r309 = await GetOrAddRaumAsync(context, RaumTypen.Labor, 309, dennis);
                 var r310 = await GetOrAddRaumAsync(context, RaumTypen.Labor, 310, emily);
                 var r311 = await GetOrAddRaumAsync(context, RaumTypen.Labor, 311, michael);
-                var r312 = await GetOrAddRaumAsync(context, RaumTypen.Labor, 312, dennis);
 
                 // Seed articles only if there are no articles in the database
                 if (!await context.Artikels.AnyAsync())
                 {
                     logger.LogInformation("Seeding Testdaten...");
-                    await SeedTestdatenAsync(context, admin, dennis, emily, michael, haupt, umb, r309, r310, r311, r312);
+                    await SeedTestdatenAsync(context, admin, new[] { dennis, emily, michael, sarah }, haupt, umb, r309, r310, r311, r312);
                 }
 
                 logger.LogInformation("Seeding completed successfully.");
@@ -86,7 +89,7 @@ namespace Lagerverwaltung.Services
         /// <param name="r312">The r312 room.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         private static async Task SeedTestdatenAsync(LagerverwaltungssystemContext context,
-            Benutzer admin, Benutzer dennis, Benutzer emily, Benutzer michael,
+            Benutzer admin, Benutzer[] lehrerListe,
             Raum haupt, Raum umb, Raum r309, Raum r310, Raum r311, Raum r312)
         {
             // Seed categories
@@ -174,7 +177,7 @@ namespace Lagerverwaltung.Services
             // Abgeschlossene Ausgaben + Übernahmen für den Laborbestand
             foreach (var b in bestand.Where(b => b.Raum.ID != haupt.ID && b.Raum.ID != umb.ID))
             {
-                var lehrer = b.Raum.Benutzer == dennis.ID ? dennis : b.Raum.Benutzer == emily.ID ? emily : michael;
+                var lehrer = lehrerListe.First(l => l.ID == b.Raum.Benutzer);
                 Buche(BewegungArten.Ausgabe, b.Art, b.Menge, haupt, b.Raum, admin, true, 28);
                 Buche(BewegungArten.Uebernahme, b.Art, b.Menge, haupt, b.Raum, lehrer, true, 27);
             }
@@ -183,11 +186,11 @@ namespace Lagerverwaltung.Services
 
             // Rückgaben: HP ProBook offen, Adapter bereits entgegengenommen (bereit zur Einbuchung)
             Buche(BewegungArten.Ausgabe, 17, 1, haupt, r310, admin, true, 20);
-            Buche(BewegungArten.Uebernahme, 17, 1, haupt, r310, emily, true, 20);
-            Buche(BewegungArten.Rueckgabe, 17, 1, r310, umb, emily, false, 1);
+            Buche(BewegungArten.Uebernahme, 17, 1, haupt, r310, lehrerListe.First(l => l.ID == r310.Benutzer), true, 20);
+            Buche(BewegungArten.Rueckgabe, 17, 1, r310, umb, lehrerListe.First(l => l.ID == r310.Benutzer), false, 1);
             Buche(BewegungArten.Ausgabe, 22, 2, haupt, r311, admin, true, 20);
-            Buche(BewegungArten.Uebernahme, 22, 2, haupt, r311, michael, true, 19);
-            Buche(BewegungArten.Rueckgabe, 22, 2, r311, umb, michael, true, 3);
+            Buche(BewegungArten.Uebernahme, 22, 2, haupt, r311, lehrerListe.First(l => l.ID == r311.Benutzer), true, 19);
+            Buche(BewegungArten.Rueckgabe, 22, 2, r311, umb, lehrerListe.First(l => l.ID == r311.Benutzer), true, 3);
 
             await context.SaveChangesAsync();
         }
@@ -207,7 +210,7 @@ namespace Lagerverwaltung.Services
             {
                 rolle = new Rolle { Name = name };
                 context.Rolles.Add(rolle);
-                await context.SaveChangesAsync();   // sets Rolle.ID after saving
+                await context.SaveChangesAsync(); // sets Rolle.ID after saving
             }
             return rolle;
         }
@@ -260,10 +263,22 @@ namespace Lagerverwaltung.Services
         {
             var typ = await context.RaumTyps.FirstAsync(t => t.Name == typName);
             var raum = await context.Raums.FirstOrDefaultAsync(r => r.RaumTyp == typ.ID && r.RaumNum == raumNum);
+
+            // Eine Lehrkraft darf nur ein Labor haben
+            if (typName == RaumTypen.Labor &&
+                await context.Raums.AnyAsync(r => r.RaumTyp == typ.ID && r.Benutzer == verantwortlich.ID && (raum == null || r.ID != raum.ID)))
+                throw new InvalidOperationException($"{verantwortlich.Username} ist bereits einem anderen Labor zugeordnet.");
+
             if (raum == null)
             {
                 raum = new Raum { RaumTyp = typ.ID, RaumNum = raumNum, Benutzer = verantwortlich.ID };
                 context.Raums.Add(raum);
+                await context.SaveChangesAsync();
+            }
+            else if (raum.Benutzer != verantwortlich.ID)
+            {
+                // Bestehende Datenbank an die neue Zuordnung anpassen
+                raum.Benutzer = verantwortlich.ID;
                 await context.SaveChangesAsync();
             }
             return raum;

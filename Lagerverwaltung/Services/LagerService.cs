@@ -111,6 +111,25 @@ namespace Lagerverwaltung.Services
         }
 
         /// <summary>
+        /// Returns the single laboratory of a teacher, or null if none is assigned
+        /// </summary>
+        public Task<Raum> LaborVonAsync(int lehrerId)
+        {
+            return Labore().FirstOrDefaultAsync(r => r.Benutzer == lehrerId);
+        }
+
+        /// <summary>
+        /// Throws if the teacher is already assigned to another laboratory (one teacher = one lab).
+        /// Call this before assigning a teacher to a lab.
+        /// </summary>
+        public async Task PruefeEinLaborProLehrerAsync(int lehrerId, int raumId)
+        {
+            var anderes = await Labore().FirstOrDefaultAsync(r => r.Benutzer == lehrerId && r.ID != raumId);
+            if (anderes != null)
+                throw new LagerException($"Diese Lehrkraft ist bereits {anderes.Anzeigename} zugeordnet. Eine Lehrkraft kann nur ein Labor haben.");
+        }
+
+        /// <summary>
         /// Returns all open handovers in the system
         /// </summary>
         /// <returns>The open handovers.</returns>
@@ -184,14 +203,28 @@ namespace Lagerverwaltung.Services
                 OffeneRueckgaben = rueckgaben.Count(x => x == r.ID)
             }).ToList();
         }
-
+        /// <summary>
+        /// Processes the addition of new items to the main storage, updating the stock and recording the movement in the system.
+        /// </summary>
+        /// <param name="artikelId">The ID of the article being added.</param>
+        /// <param name="menge">The quantity of items being added.</param>
+        /// <param name="adminId">The ID of the administrator performing the action.</param>
+        /// <returns></returns>
         public async Task ZugangAsync(int artikelId, int menge, int adminId)
         {
             var haupt = await GetLagerAsync(RaumTypen.Hauptlager);
             await AendereBestandAsync(haupt.ID, artikelId, menge);
             await BucheAsync(BewegungArten.Zugang, artikelId, menge, haupt.ID, haupt.ID, adminId, true);
         }
-
+        /// <summary>
+        /// Processes the issuance of items from the main storage to a laboratory, updating the stock and recording the movement in the system.
+        /// </summary>
+        /// <param name="artikelId">The ID of the article being issued.</param>
+        /// <param name="menge">The quantity of items being issued.</param>
+        /// <param name="laborId">The ID of the laboratory to which items are being issued.</param>
+        /// <param name="adminId">The ID of the administrator performing the action.</param>
+        /// <returns></returns>
+        /// <exception cref="LagerException">Thrown when the laboratory is not found.</exception>
         public async Task AusgebenAsync(int artikelId, int menge, int laborId, int adminId)
         {
             await PruefeMengeAsync(artikelId, menge);
@@ -203,7 +236,13 @@ namespace Lagerverwaltung.Services
             await AendereBestandAsync(haupt.ID, artikelId, -menge);
             await BucheAsync(BewegungArten.Ausgabe, artikelId, menge, haupt.ID, labor.ID, adminId, false);
         }
-
+        /// <summary>
+        /// Processes the confirmation of received items in a laboratory, updating the stock and recording the movement in the system.
+        /// </summary>
+        /// <param name="bewegungId">The ID of the movement to be confirmed.</param>
+        /// <param name="lehrerId">The ID of the teacher confirming the movement.</param>
+        /// <returns></returns>
+        /// <exception cref="LagerException">Thrown when the movement is not found or already confirmed.</exception>
         public async Task BestaetigenAsync(int bewegungId, int lehrerId)
         {
             var b = await OffeneAusgaben().FirstOrDefaultAsync(x => x.ID == bewegungId)
@@ -288,9 +327,19 @@ namespace Lagerverwaltung.Services
             await AendereBestandAsync(haupt.ID, artikelId, menge);
             await BucheAsync(BewegungArten.Einbuchung, artikelId, menge, umb.ID, haupt.ID, adminId, true);
         }
-
+        /// <summary>
+        /// Saves all changes made in the context to the database asynchronously.
+        /// </summary>
+        /// <returns></returns>
         public Task SpeichernAsync() => _db.SaveChangesAsync();
-
+        /// <summary>
+        /// Changes the stock of a specific article in a specific room by a given delta (positive or negative).
+        /// </summary>
+        /// <param name="raumId">The ID of the room.</param>
+        /// <param name="artikelId">The ID of the article.</param>
+        /// <param name="delta">The delta to apply to the stock.</param>
+        /// <returns></returns>
+        /// <exception cref="LagerException">Thrown when there is not enough stock available.</exception>
         private async Task AendereBestandAsync(int raumId, int artikelId, int delta)
         {
             var ra = await _db.RaumArtikels.FindAsync(raumId, artikelId);
@@ -301,7 +350,17 @@ namespace Lagerverwaltung.Services
             else if (neu == 0) _db.RaumArtikels.Remove(ra);
             else ra.Menge = neu;
         }
-
+        /// <summary>
+        /// Books a movement of items in the system, recording the details of the movement in the Lagerbewegungen table.
+        /// </summary>
+        /// <param name="art">The type of movement.</param>
+        /// <param name="artikelId">The ID of the article.</param>
+        /// <param name="menge">The quantity of items moved.</param>
+        /// <param name="von">The ID of the source room.</param>
+        /// <param name="zu">The ID of the destination room.</param>
+        /// <param name="benutzerId">The ID of the user confirming the movement.</param>
+        /// <param name="isDone">Indicates whether the movement is done.</param>
+        /// <returns></returns>
         private async Task BucheAsync(string art, int artikelId, int menge, int von, int zu, int benutzerId, bool isDone)
         {
             var artId = await _db.BewegungArts.Where(a => a.Name == art).Select(a => a.ID).FirstAsync();
@@ -317,7 +376,14 @@ namespace Lagerverwaltung.Services
                 IsDone = isDone
             });
         }
-
+        /// <summary>
+        /// Checks the validity of the quantity for a specific article, ensuring that it meets the requirements for movement 
+        /// (e.g., minimum quantity, serial number constraints).
+        /// </summary>
+        /// <param name="artikelId">The ID of the article.</param>
+        /// <param name="menge">The quantity to check.</param>
+        /// <returns></returns>
+        /// <exception cref="LagerException">Thrown when the quantity is invalid.</exception>
         private async Task PruefeMengeAsync(int artikelId, int menge)
         {
             var a = await _db.Artikels.FindAsync(artikelId) ?? throw new LagerException("Artikel nicht gefunden.");
