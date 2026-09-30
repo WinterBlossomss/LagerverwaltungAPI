@@ -23,7 +23,12 @@ namespace Lagerverwaltung.Controllers
 
         [AllowAnonymous]
         [HttpGet]
-        public IActionResult Login() => View(new LoginViewModel());
+        public IActionResult Login(string returnUrl = null)
+        {
+            if (User.Identity?.IsAuthenticated == true) return RedirectToAction("Index", "Dashboard");
+            ViewData["ReturnUrl"] = returnUrl;
+            return View(new LoginViewModel());
+        }
 
         /// <summary>
         /// Login
@@ -32,7 +37,7 @@ namespace Lagerverwaltung.Controllers
         /// <returns></returns>
         [AllowAnonymous]
         [HttpPost]
-        public async Task<IActionResult> Login(LoginViewModel model)
+        public async Task<IActionResult> Login(LoginViewModel model, string returnUrl = null)
         {
             //Checks if ModelState is valid
             if (!ModelState.IsValid)

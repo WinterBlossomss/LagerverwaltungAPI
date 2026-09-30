@@ -16,6 +16,7 @@ namespace Lagerverwaltung
             builder.Services.AddControllersWithViews();
 
             builder.Services.AddScoped<IPasswordHasher<Benutzer>, PepperedPasswordHasher>();
+            builder.Services.AddScoped<LagerService>();
 
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
@@ -25,22 +26,6 @@ namespace Lagerverwaltung
             });
 
             builder.Services.AddAuthorization();
-
-            //builder.Services.AddIdentity<Benutzer, IdentityRole>(options =>
-            //{
-            //    options.Password.RequireDigit = false;
-            //    options.Password.RequireLowercase = false;
-            //    options.Password.RequireNonAlphanumeric = false;
-            //    options.Password.RequireUppercase = false;
-            //    options.Password.RequiredLength = 3;
-            //    options.Password.RequiredUniqueChars = 0;
-
-            //    options.SignIn.RequireConfirmedAccount = false;
-            //    options.SignIn.RequireConfirmedEmail = false;
-            //    options.SignIn.RequireConfirmedPhoneNumber = false;
-            //})
-            //.AddEntityFrameworkStores<LagerverwaltungssystemContext>()
-            //.AddDefaultTokenProviders();
 
             builder.Services.AddDbContext<LagerverwaltungssystemContext>(
             options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

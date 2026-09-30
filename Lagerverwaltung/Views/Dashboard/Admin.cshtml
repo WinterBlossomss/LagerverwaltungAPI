@@ -1,0 +1,100 @@
+﻿@model DashboardAdminViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Administrator · @DateTime.Now.ToString("dd.MM.yyyy")</div>
+        <h1 class="h2 mb-0">Gesamtübersicht</h1>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-secondary" asp-controller="Inventar" asp-action="Index">Inventar durchsuchen</a>
+        <a class="btn btn-primary" asp-controller="Uebergabe" asp-action="Create">Neue Ausgabe</a>
+    </div>
+</div>
+
+<div class="row g-0 stat-row mb-4">
+    <div class="col-6 col-lg-3 stat">
+        <div class="stat-label">Stück im Hauptlager</div>
+        <div class="stat-value">@Model.StueckHauptlager</div>
+        <div class="stat-sub">@Model.PositionenHauptlager Positionen</div>
+    </div>
+    <div class="col-6 col-lg-3 stat">
+        <div class="stat-label">Offene Übergaben</div>
+        <div class="stat-value text-danger">@Model.OffeneAusgaben.Count</div>
+        <div class="stat-sub">warten auf Bestätigung</div>
+    </div>
+    <div class="col-6 col-lg-3 stat">
+        <div class="stat-label">Rückgaben im Umbuchungslager</div>
+        <div class="stat-value text-danger">@Model.OffeneRueckgaben.Count</div>
+        <div class="stat-sub">noch nicht entgegengenommen</div>
+    </div>
+    <div class="col-6 col-lg-3 stat">
+        <div class="stat-label">Labore</div>
+        <div class="stat-value">@Model.AnzahlLabore</div>
+        <div class="stat-sub">@Model.AnzahlLehrer verantwortliche LehrerInnen</div>
+    </div>
+</div>
+
+<div class="row g-5 mb-4">
+    <div class="col-lg-6">
+        <div class="d-flex justify-content-between align-items-baseline mb-2">
+            <h2 class="h5 mb-0">Offene Übergaben</h2>
+            <a class="small" asp-controller="Bewegungen" asp-action="Index" asp-route-Art="@BewegungArten.Ausgabe" asp-route-Status="offen">Alle anzeigen</a>
+        </div>
+        @if (!Model.OffeneAusgaben.Any())
+        {
+            <p class="text-body-secondary border-top pt-3">Keine offenen Übergaben.</p>
+        }
+        else
+        {
+            <ul class="list-group list-group-flush border-top">
+                @foreach (var b in Model.OffeneAusgaben)
+                {
+                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center gap-3">
+                        <div>
+                            <div class="fw-semibold">@b.ZuRaumNavigation.Anzeigename · @b.ZuRaumNavigation.BenutzerNavigation?.Username</div>
+                            <div class="small text-body-secondary">
+                                @(b.ArtikelMenge ?? 1) × @b.ArtikelNavigation.Name
+                                @if (b.ArtikelNavigation.SerienNum != null) { <text>· SN @b.ArtikelNavigation.SerienNum</text> }
+                            </div>
+                        </div>
+                        <span class="badge text-bg-warning text-nowrap">seit @b.Datum.ToString("dd.MM.yyyy")</span>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+    <div class="col-lg-6">
+        <div class="d-flex justify-content-between align-items-baseline mb-2">
+            <h2 class="h5 mb-0">Umbuchungslager</h2>
+            <a class="small" asp-controller="Umbuchung" asp-action="Index">Rückgaben bearbeiten</a>
+        </div>
+        @if (!Model.OffeneRueckgaben.Any())
+        {
+            <p class="text-body-secondary border-top pt-3">Keine offenen Rückgaben.</p>
+        }
+        else
+        {
+            <ul class="list-group list-group-flush border-top">
+                @foreach (var b in Model.OffeneRueckgaben)
+                {
+                    <li class="list-group-item px-0 d-flex justify-content-between align-items-center gap-3">
+                        <div>
+                            <div class="fw-semibold">@(b.ArtikelMenge ?? 1) × @b.ArtikelNavigation.Name</div>
+                            <div class="small text-body-secondary">aus @b.VonRaumNavigation.Anzeigename · @b.BenutzerNavigation.Username · @b.Datum.ToString("dd.MM.yyyy")</div>
+                        </div>
+                        <partial name="_BewegungStatus" model="b" />
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-baseline mb-2">
+    <h2 class="h5 mb-0">Letzte Lagerbewegungen</h2>
+    <a class="small" asp-controller="Bewegungen" asp-action="Index">Alle Bewegungen</a>
+</div>
+<partial name="_BewegungTabelle" model="Model.LetzteBewegungen" />
