@@ -17,24 +17,6 @@ public class ArtikelController : Controller
         return View(await _context.Artikels.ToListAsync());
     }
 
-    // GET: ARTIKELS/Details/5
-    public async Task<IActionResult> Details(int? id)
-    {
-        if (id == null)
-        {
-            return NotFound();
-        }
-
-        var artikel = await _context.Artikels
-            .FirstOrDefaultAsync(m => m.ID == id);
-        if (artikel == null)
-        {
-            return NotFound();
-        }
-
-        return View(artikel);
-    }
-
     // GET: ARTIKELS/Create
     public IActionResult Create()
     {
