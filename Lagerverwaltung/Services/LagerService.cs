@@ -58,7 +58,7 @@ namespace Lagerverwaltung.Services
             /// <summary>
             /// Returns the main storage room in the system
             /// </summary>
-            /// <param name="typ"></param>
+            /// <param name="typ">The type of the room</param>
             /// <returns></returns>
             public Task<Raum> GetLagerAsync(string typ)
             {
@@ -104,7 +104,7 @@ namespace Lagerverwaltung.Services
             /// <summary>
             /// Returns the number of open handovers for a specific teacher
             /// </summary>
-            /// <param name="lehrerId"></param>
+            /// <param name="lehrerId">The ID of the teacher</param>
             /// <returns></returns>
             public Task<int> AnzahlOffeneUebergabenAsync(int lehrerId)
             {
@@ -114,12 +114,37 @@ namespace Lagerverwaltung.Services
             /// <summary>
             /// Returns the stock of a specific article in a specific room
             /// </summary>
-            /// <param name="raumId"></param>
-            /// <param name="artikelId"></param>
+            /// <param name="raumId">The ID of the room</param>
+            /// <param name="artikelId">The ID of the article</param>
             /// <returns></returns>
             public async Task<int> BestandAsync(int raumId, int artikelId)
             {
                 return (await _db.RaumArtikels.FindAsync(raumId, artikelId))?.Menge ?? 0;
+            }
+
+            /// <summary>
+            /// Returns an overview of the stock in the specified rooms
+            /// </summary>
+            /// <param name="raeume">The rooms for which to provide an overview</param>
+            /// <returns></returns>
+            public async Task<List<RaumUebersicht>> UebersichtAsync(List<Raum> raeume)
+            {
+                ar ids = raeume.Select(r => r.ID).ToList();
+                var bestand = await _db.RaumArtikels.Where(r => ids.Contains(r.Raum)).ToListAsync();
+                var ausgaben = await OffeneAusgaben().Select(b => b.ZuRaum).ToListAsync();
+                var rueckgaben = await OffeneRueckgaben().Select(b => b.ZuRaum).ToListAsync();
+
+                return raeume.Select(r => new StandortKachel
+                {
+                    RaumId = r.ID,
+                    Name = r.Anzeigename,
+                    Typ = r.RaumTypNavigation?.Name,
+                    Verantwortlich = r.BenutzerNavigation?.Username,
+                    Positionen = bestand.Count(b => b.Raum == r.ID),
+                    Stueck = bestand.Where(b => b.Raum == r.ID).Sum(b => b.Menge),
+                    OffeneUebergaben = ausgaben.Count(x => x == r.ID),
+                    OffeneRueckgaben = rueckgaben.Count(x => x == r.ID)
+                }).ToList();
             }
         }
     }
