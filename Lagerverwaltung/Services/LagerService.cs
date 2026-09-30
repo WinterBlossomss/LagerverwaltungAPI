@@ -1,4 +1,7 @@
-﻿namespace Lagerverwaltung.Services
+﻿using Lagerverwaltung.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace Lagerverwaltung.Services
 {
     public class LagerService
     {
@@ -42,5 +45,81 @@
             {
             }
         }
+
+        public class LagerService
+        {
+            private readonly LagerverwaltungssystemContext _db;
+
+            public LagerService(LagerverwaltungssystemContext db)
+            {
+                _db = db;
+            }
+
+            /// <summary>
+            /// Returns the main storage room in the system
+            /// </summary>
+            /// <param name="typ"></param>
+            /// <returns></returns>
+            public Task<Raum> GetLagerAsync(string typ)
+            {
+                return _db.Raums.MitDetails().FirstAsync(r => r.RaumTypNavigation.Name == typ);
+            }
+
+            /// <summary>
+            /// Returns all laboratories in the system
+            /// </summary>
+            /// <returns></returns>
+            public IQueryable<Raum> Labore()
+            {
+                return _db.Raums.MitDetails().Where(r => r.RaumTypNavigation.Name == RaumTypen.Labor).OrderBy(r => r.RaumNum);
+            }
+
+            /// <summary>
+            /// Returns all open handovers in the system
+            /// </summary>
+            /// <returns></returns>
+            public IQueryable<Lagerbewegungen> OffeneAusgaben()
+            {
+                return _db.Lagerbewegungens.MitDetails().Where(b => b.BewegungArt == BewegungArten.Ausgabe && !b.IsDone);
+            }
+
+            /// <summary>
+            /// Returns all open returns in the system
+            /// </summary>
+            /// <returns></returns>
+            public IQueryable<Lagerbewegungen> OffeneRueckgaben()
+            {
+                return _db.Lagerbewegungens.MitDetails().Where(b => b.BewegungArt == BewegungArten.Rueckgabe && !b.IsDone);
+            }
+
+            /// <summary>
+            /// Returns the number of open returns in the system
+            /// </summary>
+            /// <returns></returns>
+            public Task<int> AnzahlOffeneRueckgabenAsync()
+            {
+                return OffeneRueckgaben().CountAsync();
+            }
+
+            /// <summary>
+            /// Returns the number of open handovers for a specific teacher
+            /// </summary>
+            /// <param name="lehrerId"></param>
+            /// <returns></returns>
+            public Task<int> AnzahlOffeneUebergabenAsync(int lehrerId)
+            {
+                return OffeneAusgaben().CountAsync(b => b.ZuRaumNavigation.Benutzer == lehrerId);
+            }
+
+            /// <summary>
+            /// Returns the stock of a specific article in a specific room
+            /// </summary>
+            /// <param name="raumId"></param>
+            /// <param name="artikelId"></param>
+            /// <returns></returns>
+            public async Task<int> BestandAsync(int raumId, int artikelId)
+            {
+                return (await _db.RaumArtikels.FindAsync(raumId, artikelId))?.Menge ?? 0;
+            }
+        }
     }
-}
