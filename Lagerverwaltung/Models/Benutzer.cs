@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Lagerverwaltung.Models;
 
 [Table("Benutzer")]
-public partial class Benutzer : IdentityUser
+public partial class Benutzer
 {
     [Key]
     public int ID { get; set; }

@@ -1,90 +1,90 @@
 ﻿{
-   "CodeGenerationMode": 6,
-   "ContextClassName": "LagerverwaltungssystemContext",
-   "ContextNamespace": null,
-   "FilterSchemas": false,
-   "IncludeConnectionString": true,
-   "IrregularWords": null,
-   "MinimumProductVersion": "2.6.1706",
-   "ModelNamespace": null,
-   "OutputContextPath": null,
-   "OutputPath": "Models",
-   "PluralRules": null,
-   "PreserveCasingWithRegex": true,
-   "ProjectRootNamespace": "Lagerverwaltung",
-   "Schemas": null,
-   "SelectedHandlebarsLanguage": 2,
-   "SelectedToBeGenerated": 0,
-   "SingularRules": null,
-   "T4TemplatePath": null,
-   "Tables": [
-      {
-         "Name": "[dbo].[Artikel]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Benutzer]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[BewegungArt]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Hersteller]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Kategorie]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Lagerbewegungen]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Raum]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[RaumArtikel]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[RaumTyp]",
-         "ObjectType": 0
-      },
-      {
-         "Name": "[dbo].[Rolle]",
-         "ObjectType": 0
-      }
-   ],
-   "UiHint": null,
-   "UncountableWords": null,
-   "UseAsyncStoredProcedureCalls": true,
-   "UseBoolPropertiesWithoutDefaultSql": false,
-   "UseDatabaseNames": true,
-   "UseDatabaseNamesForRoutines": true,
-   "UseDateOnlyTimeOnly": true,
-   "UseDbContextSplitting": false,
-   "UseDecimalDataAnnotationForSprocResult": true,
-   "UseFluentApiOnly": false,
-   "UseHandleBars": false,
-   "UseHierarchyId": false,
-   "UseInflector": true,
-   "UseInternalAccessModifiersForSprocsAndFunctions": false,
-   "UseLegacyPluralizer": false,
-   "UseManyToManyEntity": false,
-   "UseNoDefaultConstructor": false,
-   "UseNoNavigations": false,
-   "UseNoObjectFilter": false,
-   "UseNodaTime": false,
-   "UseNullableReferences": false,
-   "UsePrefixNavigationNaming": false,
-   "UseSchemaFolders": false,
-   "UseSchemaNamespaces": false,
-   "UseSpatial": false,
-   "UseT4": false,
-   "UseT4Split": false,
-   "UseTypedTvpParameters": true
+  "CodeGenerationMode": 6,
+  "ContextClassName": "LagerverwaltungssystemContext",
+  "ContextNamespace": null,
+  "FilterSchemas": false,
+  "IncludeConnectionString": true,
+  "IrregularWords": null,
+  "MinimumProductVersion": "2.6.1706",
+  "ModelNamespace": null,
+  "OutputContextPath": null,
+  "OutputPath": "Models",
+  "PluralRules": null,
+  "PreserveCasingWithRegex": true,
+  "ProjectRootNamespace": "Lagerverwaltung",
+  "Schemas": null,
+  "SelectedHandlebarsLanguage": 2,
+  "SelectedToBeGenerated": 0,
+  "SingularRules": null,
+  "T4TemplatePath": null,
+  "Tables": [
+    {
+      "Name": "[dbo].[Artikel]",
+      "ObjectType": 0
+    },
+    {
+      "Name": "[dbo].[Benutzer]",
+      "ObjectType": 0
+    },
+    {
+      "Name": "[dbo].[BewegungArt]",
+      "ObjectType": 0
+    },
+    {
+      "Name": "[dbo].[Hersteller]",
+      "ObjectType": 0
+    },
+    {
+      "Name": "[dbo].[Kategorie]",
+      "ObjectType": 0
+    },
+    {
+      "Name": "[dbo].[Lagerbewegungen]",
+      "ObjectType": 0
+    },
+    {
+      "Name": "[dbo].[Raum]",
+      "ObjectType": 0
+    },
+    {
+      "Name": "[dbo].[RaumArtikel]",
+      "ObjectType": 0
+    },
+    {
+      "Name": "[dbo].[RaumTyp]",
+      "ObjectType": 0
+    },
+    {
+      "Name": "[dbo].[Rolle]",
+      "ObjectType": 0
+    }
+  ],
+  "UiHint": null,
+  "UncountableWords": null,
+  "UseAsyncStoredProcedureCalls": true,
+  "UseBoolPropertiesWithoutDefaultSql": false,
+  "UseDatabaseNames": true,
+  "UseDatabaseNamesForRoutines": true,
+  "UseDateOnlyTimeOnly": true,
+  "UseDbContextSplitting": false,
+  "UseDecimalDataAnnotationForSprocResult": true,
+  "UseFluentApiOnly": false,
+  "UseHandleBars": false,
+  "UseHierarchyId": false,
+  "UseInflector": true,
+  "UseInternalAccessModifiersForSprocsAndFunctions": false,
+  "UseLegacyPluralizer": false,
+  "UseManyToManyEntity": false,
+  "UseNoDefaultConstructor": false,
+  "UseNoNavigations": false,
+  "UseNoObjectFilter": false,
+  "UseNodaTime": false,
+  "UseNullableReferences": false,
+  "UsePrefixNavigationNaming": false,
+  "UseSchemaFolders": false,
+  "UseSchemaNamespaces": false,
+  "UseSpatial": false,
+  "UseT4": false,
+  "UseT4Split": false,
+  "UseTypedTvpParameters": true
 }

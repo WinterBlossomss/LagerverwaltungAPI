@@ -1,26 +1,80 @@
 ﻿using Lagerverwaltung.Models;
+using Lagerverwaltung.ViewModels;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace Lagerverwaltung.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly SignInManager<Benutzer> signInManager;
-        private readonly UserManager<Benutzer> userManager;
-        private readonly RoleManager<IdentityRole> roleManager;
+        private readonly LagerverwaltungssystemContext _db;
+        private readonly IPasswordHasher<Benutzer> _passwordHasher;
 
-        public AccountController(SignInManager<Benutzer> signInManager, UserManager<Benutzer> userManager, RoleManager<IdentityRole> roleManager)
+        public AccountController(LagerverwaltungssystemContext db, IPasswordHasher<Benutzer> passwordHasher)
         {
-            this.signInManager = signInManager;
-            this.userManager = userManager;
-            this.roleManager = roleManager;
+            _db = db;
+            _passwordHasher = passwordHasher;
         }
 
+        [AllowAnonymous]
         [HttpGet]
-        public IActionResult Login()
+        public IActionResult Login() => View(new LoginViewModel());
+
+        /// <summary>
+        /// Login
+        /// </summary>
+        /// <param name="model"></param>
+        /// <returns></returns>
+        [AllowAnonymous]
+        [HttpPost]
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
-            return View();
+            //Checks if ModelState is valid
+            if (!ModelState.IsValid)
+                return View(model);
+
+            //Checks if User in DB
+            var benutzer = await _db.Benutzers
+                .Include(b => b.RolleNavigation)
+                .FirstOrDefaultAsync(b => b.Username == model.Username);
+
+            if (benutzer == null ||
+                _passwordHasher.VerifyHashedPassword(benutzer, benutzer.Password, model.Password)
+                    == PasswordVerificationResult.Failed)
+            {
+                ModelState.AddModelError("", "Benutzername oder Passwort falsch");
+                return View(model);
+            }
+
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, benutzer.ID.ToString()),
+                new(ClaimTypes.Name, benutzer.Username),
+                new(ClaimTypes.Role, benutzer.RolleNavigation.Name)
+            };
+
+            var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(identity));
+
+            return RedirectToAction("Index", "Home");
         }
+
+        [Authorize]
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Login");
+        }
+
+        [AllowAnonymous]
+        public IActionResult AccessDenied() => View();
     }
 }

@@ -31,29 +31,6 @@ namespace Lagerverwaltung.Controllers
             return View();
         }
 
-        [AllowAnonymous]
-        public async Task<IActionResult> Login()
-        {
-            Benutzer benutzer = new Benutzer();
-            string pepper = "MyLittlePony";
-            string password = benutzer.Password + pepper;
-            string hash = _passwordHasher.HashPassword(benutzer, password);
-
-            if (true)
-            {
-                var claims = new List<Claim>
-                {
-                    new Claim(ClaimTypes.Name, benutzer.Username),
-                    new Claim(ClaimTypes.Sid, benutzer.ID.ToString()),
-                    new Claim(ClaimTypes.Role, benutzer.RolleNavigation.Name)
-                };
-                ClaimsIdentity claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-                ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
-                await HttpContext.SignInAsync(claimsPrincipal);
-            }
-            return View();
-        }
-
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

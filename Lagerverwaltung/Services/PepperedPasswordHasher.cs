@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
-using Lagerverwaltung.Models;
+﻿using Lagerverwaltung.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace Lagerverwaltung.Services
 {
@@ -10,7 +9,7 @@ namespace Lagerverwaltung.Services
         private readonly string _pepper;
 
         /// <summary>
-        /// IConfiguration is the built-in ASP.NET Core interface for accessing configuration settings. 
+        /// IConfiguration is the built-in ASP.NET Core interface for accessing configuration settings.
         /// It allows you to retrieve values from various configuration sources, such as appsettings.json, environment variables, and user secrets.
         /// </summary>
         /// <param name="configuration"></param>
@@ -20,6 +19,7 @@ namespace Lagerverwaltung.Services
             _pepper = configuration["Security:Pepper"]
                 ?? throw new InvalidOperationException("Pepper is not configured.");
         }
+
         /// <summary>
         /// Gets called when user registers or sets a password
         /// </summary>
@@ -32,6 +32,7 @@ namespace Lagerverwaltung.Services
             var pepperedPassword = password + _pepper;
             return _innerHasher.HashPassword(user, pepperedPassword);
         }
+
         /// <summary>
         /// Gets called at login, it adds the pepper to the user provided password and checks if it matches the hashed password in the database
         /// </summary>

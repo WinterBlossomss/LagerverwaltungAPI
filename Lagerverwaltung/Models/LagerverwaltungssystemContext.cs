@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace Lagerverwaltung.Models;
 
-public partial class LagerverwaltungssystemContext : IdentityDbContext<Benutzer>
+public partial class LagerverwaltungssystemContext : DbContext
 {
     public LagerverwaltungssystemContext()
     {

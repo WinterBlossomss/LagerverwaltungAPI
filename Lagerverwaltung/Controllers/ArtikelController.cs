@@ -1,7 +1,6 @@
-
+using Lagerverwaltung.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Lagerverwaltung.Models;
 
 public class ArtikelController : Controller
 {
@@ -13,7 +12,7 @@ public class ArtikelController : Controller
     }
 
     // GET: ARTIKELS
-    public async Task<IActionResult> Index()    
+    public async Task<IActionResult> Index()
     {
         return View(await _context.Artikels.ToListAsync());
     }
