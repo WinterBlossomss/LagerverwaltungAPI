@@ -18,14 +18,8 @@ public partial class Kategorie
     [StringLength(100)]
     public string Name { get; set; }
 
-    public int? Hersteller { get; set; }
-
     public int? ModelNum { get; set; }
 
     [InverseProperty("KategorieNavigation")]
     public virtual ICollection<Artikel> Artikels { get; set; } = new List<Artikel>();
-
-    [ForeignKey("Hersteller")]
-    [InverseProperty("Kategories")]
-    public virtual Hersteller HerstellerNavigation { get; set; }
 }

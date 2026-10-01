@@ -24,23 +24,19 @@ namespace Lagerverwaltung.Controllers
             if (!string.IsNullOrWhiteSpace(vm.Suche))
             {
                 var s = vm.Suche.Trim();
-                q = q.Where(k => k.Name.Contains(s) || k.HerstellerNavigation.Name.Contains(s)
-                              || (k.ModelNum != null && k.ModelNum.ToString()!.Contains(s)));
+                q = q.Where(k => k.Name.Contains(s) || (k.ModelNum != null && k.ModelNum.ToString()!.Contains(s)));
             }
-            if (vm.HerstellerId != null) q = q.Where(k => k.Hersteller == vm.HerstellerId);
 
             vm.Kategorien = await q
-                .OrderBy(k => k.HerstellerNavigation.Name).ThenBy(k => k.Name)
+                .OrderBy(k => k.Name)
                 .Select(k => new KategorieZeile
                 {
                     ID = k.ID,
                     Name = k.Name,
-                    Hersteller = k.HerstellerNavigation.Name,
                     ModelNum = k.ModelNum,
                     AnzahlArtikel = k.Artikels.Count()
                 })
                 .ToListAsync();
-            vm.Hersteller = await HerstellerAsync();
             return View(vm);
         }
 
@@ -48,8 +44,7 @@ namespace Lagerverwaltung.Controllers
         {
             if (id == null) return NotFound();
             var kategorie = await _context.Kategories
-                .Include(k => k.HerstellerNavigation)
-                .Include(k => k.Artikels)
+                .Include(k => k.Artikels).ThenInclude(a => a.HerstellerNavigation)
                 .FirstOrDefaultAsync(k => k.ID == id);
             if (kategorie == null) return NotFound();
 
@@ -60,25 +55,17 @@ namespace Lagerverwaltung.Controllers
             });
         }
 
-        public async Task<IActionResult> Create(string returnUrl = null)
-        {
-            var vm = new KategorieFormViewModel { ReturnUrl = returnUrl };
-            vm.Hersteller = await HerstellerAsync();
-            return View(vm);
-        }
+        public IActionResult Create(string returnUrl = null) =>
+            View(new KategorieFormViewModel { ReturnUrl = returnUrl });
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(KategorieFormViewModel vm)
         {
             await ValidiereAsync(vm);
-            if (!ModelState.IsValid)
-            {
-                vm.Hersteller = await HerstellerAsync();
-                return View(vm);
-            }
+            if (!ModelState.IsValid) return View(vm);
 
-            var kategorie = new Kategorie { Name = vm.Name.Trim(), Hersteller = vm.HerstellerId, ModelNum = vm.ModelNum };
+            var kategorie = new Kategorie { Name = vm.Name.Trim(), ModelNum = vm.ModelNum };
             _context.Kategories.Add(kategorie);
             await _context.SaveChangesAsync();
 
@@ -97,9 +84,7 @@ namespace Lagerverwaltung.Controllers
             {
                 ID = kategorie.ID,
                 Name = kategorie.Name,
-                HerstellerId = kategorie.Hersteller,
-                ModelNum = kategorie.ModelNum,
-                Hersteller = await HerstellerAsync()
+                ModelNum = kategorie.ModelNum
             });
         }
 
@@ -112,14 +97,9 @@ namespace Lagerverwaltung.Controllers
             if (kategorie == null) return NotFound();
 
             await ValidiereAsync(vm);
-            if (!ModelState.IsValid)
-            {
-                vm.Hersteller = await HerstellerAsync();
-                return View(vm);
-            }
+            if (!ModelState.IsValid) return View(vm);
 
             kategorie.Name = vm.Name.Trim();
-            kategorie.Hersteller = vm.HerstellerId;
             kategorie.ModelNum = vm.ModelNum;
             await _context.SaveChangesAsync();
 
@@ -148,17 +128,12 @@ namespace Lagerverwaltung.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        /// <summary>Gleicher Name beim gleichen Hersteller ist nicht erlaubt.</summary>
+        /// <summary>Kategorie-Namen müssen eindeutig sein.</summary>
         private async Task ValidiereAsync(KategorieFormViewModel vm)
         {
             if (!string.IsNullOrWhiteSpace(vm.Name) &&
-                await _context.Kategories.AnyAsync(k => k.Name == vm.Name.Trim() && k.Hersteller == vm.HerstellerId && k.ID != vm.ID))
-                ModelState.AddModelError(nameof(vm.Name), "Diese Kategorie existiert für diesen Hersteller bereits.");
+                await _context.Kategories.AnyAsync(k => k.Name == vm.Name.Trim() && k.ID != vm.ID))
+                ModelState.AddModelError(nameof(vm.Name), "Diese Kategorie existiert bereits.");
         }
-
-        private async Task<IEnumerable<SelectListItem>> HerstellerAsync() =>
-            await _context.Herstellers.OrderBy(h => h.Name)
-                .Select(h => new SelectListItem(h.Name, h.ID.ToString()))
-                .ToListAsync();
     }
 }

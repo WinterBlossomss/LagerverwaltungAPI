@@ -100,6 +100,14 @@ namespace Lagerverwaltung.Services
                 context.Kategories.Add(k);
                 kategorien[name] = k;
             }
+            // Seed manufacturers
+            var hersteller = new Dictionary<string, Hersteller>();
+            foreach (var name in new[] { "Dell", "Lenovo", "HP", "Cisco", "Ubiquiti", "Epson", "Logitech" })
+            {
+                var h = new Hersteller { Name = name };
+                context.Herstellers.Add(h);
+                hersteller[name] = h;
+            }
             await context.SaveChangesAsync();
 
             // Get "BewegungArts" as a dictionary for easy access
@@ -138,7 +146,14 @@ namespace Lagerverwaltung.Services
             var neu = new Dictionary<int, Artikel>();
             foreach (var a in artikel)
             {
-                var e = new Artikel { Name = a.Name, SerienNum = a.Sn, KategorieNavigation = kategorien[a.Kat] };
+                var e = new Artikel
+                {
+                    Name = a.Name,
+                    SerienNum = a.Sn,
+                    KategorieNavigation = kategorien[a.Kat],
+                    // Hersteller = erstes Wort der Bezeichnung, falls bekannt (z. B. "Dell P2422H" -> Dell)
+                    HerstellerNavigation = hersteller.GetValueOrDefault(a.Name.Split(' ')[0])
+                };
                 context.Artikels.Add(e);
                 neu[a.Id] = e;
             }

@@ -16,16 +16,6 @@
 </div>
 
 <div class="row g-0 stat-row mb-4">
-    <div class="col-6 col-lg-3 stat">
-        <div class="stat-label">Hersteller</div>
-        <div class="stat-value fs-3">
-            @if (k.HerstellerNavigation != null)
-            {
-                <a asp-controller="Hersteller" asp-action="Details" asp-route-id="@k.Hersteller">@k.HerstellerNavigation.Name</a>
-            }
-            else { <text>—</text> }
-        </div>
-    </div>
     <div class="col-6 col-lg-3 stat"><div class="stat-label">Modellnummer</div><div class="stat-value fs-3">@(k.ModelNum?.ToString() ?? "—")</div></div>
     <div class="col-6 col-lg-3 stat"><div class="stat-label">Artikel</div><div class="stat-value fs-3">@Model.Artikel.Count</div></div>
 </div>
@@ -38,12 +28,13 @@
 else
 {
     <table class="table align-middle">
-        <thead><tr><th>Bezeichnung</th><th>Seriennummer</th><th></th></tr></thead>
+        <thead><tr><th>Bezeichnung</th><th>Hersteller</th><th>Seriennummer</th><th></th></tr></thead>
         <tbody>
             @foreach (var a in Model.Artikel)
             {
                 <tr>
                     <td class="fw-semibold">@a.Name</td>
+                    <td>@(a.HerstellerNavigation?.Name ?? "—")</td>
                     <td>@(a.SerienNum?.ToString() ?? "—")</td>
                     <td class="text-end"><a asp-controller="Artikel" asp-action="Details" asp-route-id="@a.ID" class="btn btn-sm btn-outline-secondary">Details</a></td>
                 </tr>

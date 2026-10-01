@@ -19,5 +19,5 @@ public partial class Hersteller
     public string Name { get; set; }
 
     [InverseProperty("HerstellerNavigation")]
-    public virtual ICollection<Kategorie> Kategories { get; set; } = new List<Kategorie>();
+    public virtual ICollection<Artikel> Artikels { get; set; } = new List<Artikel>();
 }

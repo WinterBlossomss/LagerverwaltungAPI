@@ -12,15 +12,9 @@
 </div>
 
 <form method="get" asp-action="Index" class="row g-3 align-items-end mb-3">
-    <div class="col-12 col-md-6">
+    <div class="col-8 col-md-6">
         <label asp-for="Suche" class="form-label small">Suche</label>
-        <input asp-for="Suche" class="form-control" placeholder="Name, Hersteller oder Modellnummer" />
-    </div>
-    <div class="col-8 col-md-4">
-        <label asp-for="HerstellerId" class="form-label small">Hersteller</label>
-        <select asp-for="HerstellerId" asp-items="Model.Hersteller" class="form-select">
-            <option value="">Alle</option>
-        </select>
+        <input asp-for="Suche" class="form-control" placeholder="Name oder Modellnummer" />
     </div>
     <div class="col-4 col-md-2">
         <button type="submit" class="btn btn-secondary w-100">Filtern</button>
@@ -38,7 +32,6 @@ else
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Hersteller</th>
                     <th>Modellnummer</th>
                     <th class="text-end">Artikel</th>
                     <th></th>
@@ -49,7 +42,6 @@ else
                 {
                     <tr>
                         <td class="fw-semibold">@k.Name</td>
-                        <td>@(k.Hersteller ?? "—")</td>
                         <td>@(k.ModelNum?.ToString() ?? "—")</td>
                         <td class="text-end">@k.AnzahlArtikel</td>
                         <td class="text-end text-nowrap">

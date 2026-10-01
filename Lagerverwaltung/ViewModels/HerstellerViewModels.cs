@@ -9,7 +9,6 @@ namespace Lagerverwaltung.ViewModels
     {
         public int ID { get; set; }
         public string Name { get; set; }
-        public int AnzahlKategorien { get; set; }
         public int AnzahlArtikel { get; set; }
     }
 
@@ -37,8 +36,7 @@ namespace Lagerverwaltung.ViewModels
     public class HerstellerDetailsViewModel
     {
         public Hersteller Hersteller { get; set; }
-        public List<Kategorie> Kategorien { get; set; } = new();
-        public int AnzahlArtikel { get; set; }
-        public bool KannGeloeschtWerden => !Kategorien.Any();
+        public List<Artikel> Artikel { get; set; } = new();
+        public bool KannGeloeschtWerden => !Artikel.Any();
     }
 }

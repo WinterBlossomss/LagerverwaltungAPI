@@ -22,6 +22,12 @@ public partial class Artikel
 
     public int Kategorie { get; set; }
 
+    public int? Hersteller { get; set; }
+
+    [ForeignKey("Hersteller")]
+    [InverseProperty("Artikels")]
+    public virtual Hersteller HerstellerNavigation { get; set; }
+
     [ForeignKey("Kategorie")]
     [InverseProperty("Artikels")]
     public virtual Kategorie KategorieNavigation { get; set; }

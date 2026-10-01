@@ -1,7 +1,4 @@
 ﻿@model KategorieFormViewModel
-@{
-    var hierher = Context.Request.Path + Context.Request.QueryString;
-}
 
 <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
 <input type="hidden" asp-for="ID" />
@@ -11,17 +8,6 @@
     <label asp-for="Name" class="form-label"></label>
     <input asp-for="Name" class="form-control" placeholder="z. B. Monitor 24 Zoll" />
     <span asp-validation-for="Name" class="text-danger small"></span>
-</div>
-
-<div class="mb-3">
-    <label asp-for="HerstellerId" class="form-label"></label>
-    <div class="d-flex gap-2">
-        <select asp-for="HerstellerId" asp-items="Model.Hersteller" class="form-select">
-            <option value="">– ohne Hersteller –</option>
-        </select>
-        <a asp-controller="Hersteller" asp-action="Create" asp-route-returnUrl="@hierher" class="btn btn-outline-secondary text-nowrap">+ Hersteller</a>
-    </div>
-    <span asp-validation-for="HerstellerId" class="text-danger small"></span>
 </div>
 
 <div class="mb-3">

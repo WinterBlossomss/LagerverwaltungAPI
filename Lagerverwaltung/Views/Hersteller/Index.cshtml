@@ -30,7 +30,6 @@ else
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th class="text-end">Kategorien</th>
                     <th class="text-end">Artikel</th>
                     <th></th>
                 </tr>
@@ -40,7 +39,6 @@ else
                 {
                     <tr>
                         <td class="fw-semibold">@h.Name</td>
-                        <td class="text-end">@h.AnzahlKategorien</td>
                         <td class="text-end">@h.AnzahlArtikel</td>
                         <td class="text-end text-nowrap">
                             <a asp-action="Details" asp-route-id="@h.ID" class="btn btn-sm btn-outline-secondary">Details</a>

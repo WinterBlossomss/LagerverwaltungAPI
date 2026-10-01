@@ -15,26 +15,26 @@
 </div>
 
 <div class="row g-0 stat-row mb-4">
-    <div class="col-6 col-lg-3 stat"><div class="stat-label">Kategorien</div><div class="stat-value">@Model.Kategorien.Count</div></div>
-    <div class="col-6 col-lg-3 stat"><div class="stat-label">Artikel</div><div class="stat-value">@Model.AnzahlArtikel</div></div>
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Artikel</div><div class="stat-value">@Model.Artikel.Count</div></div>
 </div>
 
-<h2 class="h5 mb-2">Kategorien</h2>
-@if (!Model.Kategorien.Any())
+<h2 class="h5 mb-2">Artikel</h2>
+@if (!Model.Artikel.Any())
 {
-    <p class="text-body-secondary border-top pt-3">Noch keine Kategorie mit diesem Hersteller.</p>
+    <p class="text-body-secondary border-top pt-3">Noch keine Artikel von diesem Hersteller.</p>
 }
 else
 {
     <table class="table align-middle">
-        <thead><tr><th>Kategorie</th><th>Modellnummer</th><th class="text-end">Artikel</th></tr></thead>
+        <thead><tr><th>Bezeichnung</th><th>Kategorie</th><th>Seriennummer</th><th></th></tr></thead>
         <tbody>
-            @foreach (var k in Model.Kategorien)
+            @foreach (var a in Model.Artikel)
             {
                 <tr>
-                    <td class="fw-semibold">@k.Name</td>
-                    <td>@(k.ModelNum?.ToString() ?? "—")</td>
-                    <td class="text-end">@k.Artikels.Count</td>
+                    <td class="fw-semibold">@a.Name</td>
+                    <td>@a.KategorieNavigation?.Name</td>
+                    <td>@(a.SerienNum?.ToString() ?? "—")</td>
+                    <td class="text-end"><a asp-controller="Artikel" asp-action="Details" asp-route-id="@a.ID" class="btn btn-sm btn-outline-secondary">Details</a></td>
                 </tr>
             }
         </tbody>

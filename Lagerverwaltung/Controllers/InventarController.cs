@@ -41,7 +41,8 @@ namespace Lagerverwaltung.Controllers
 
             // Bestand in allen Räumen
             var bestand = await _db.RaumArtikels
-                .Include(ra => ra.ArtNavigation).ThenInclude(a => a.KategorieNavigation).ThenInclude(k => k.HerstellerNavigation)
+                .Include(ra => ra.ArtNavigation).ThenInclude(a => a.KategorieNavigation)
+                .Include(ra => ra.ArtNavigation).ThenInclude(a => a.HerstellerNavigation)
                 .Include(ra => ra.RaumNavigation).ThenInclude(r => r.RaumTypNavigation)
                 .Include(ra => ra.RaumNavigation).ThenInclude(r => r.BenutzerNavigation)
                 .ToListAsync();
@@ -56,7 +57,7 @@ namespace Lagerverwaltung.Controllers
                     ArtikelId = ra.Art,
                     Name = ra.ArtNavigation.Name,
                     Kategorie = ra.ArtNavigation.KategorieNavigation?.Name,
-                    Hersteller = ra.ArtNavigation.KategorieNavigation?.HerstellerNavigation?.Name,
+                    Hersteller = ra.ArtNavigation.HerstellerNavigation?.Name,
                     SerienNum = ra.ArtNavigation.SerienNum,
                     Standort = ra.RaumNavigation.Anzeigename,
                     RaumId = ra.Raum,
@@ -72,7 +73,8 @@ namespace Lagerverwaltung.Controllers
 
             // Gegenstände, die gerade unterwegs sind (Übergabe noch nicht bestätigt)
             var unterwegs = await _lager.OffeneAusgaben()
-                .Include(b => b.ArtikelNavigation).ThenInclude(a => a.KategorieNavigation).ThenInclude(k => k.HerstellerNavigation)
+                .Include(b => b.ArtikelNavigation).ThenInclude(a => a.KategorieNavigation)
+                .Include(b => b.ArtikelNavigation).ThenInclude(a => a.HerstellerNavigation)
                 .ToListAsync();
             zeilen.AddRange(unterwegs
                 .Where(b => Passt(b.ArtikelNavigation))
@@ -83,7 +85,7 @@ namespace Lagerverwaltung.Controllers
                     ArtikelId = b.Artikel,
                     Name = b.ArtikelNavigation.Name,
                     Kategorie = b.ArtikelNavigation.KategorieNavigation?.Name,
-                    Hersteller = b.ArtikelNavigation.KategorieNavigation?.HerstellerNavigation?.Name,
+                    Hersteller = b.ArtikelNavigation.HerstellerNavigation?.Name,
                     SerienNum = b.ArtikelNavigation.SerienNum,
                     Standort = "→ " + b.ZuRaumNavigation.Anzeigename,
                     RaumId = b.ZuRaum,

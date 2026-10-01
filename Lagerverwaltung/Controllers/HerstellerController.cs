@@ -38,15 +38,14 @@ namespace Lagerverwaltung.Controllers
                 {
                     ID = h.ID,
                     Name = h.Name,
-                    AnzahlKategorien = h.Kategories.Count(),
-                    AnzahlArtikel = h.Kategories.SelectMany(k => k.Artikels).Count()
+                    AnzahlArtikel = h.Artikels.Count()
                 })
                 .ToListAsync();
             return View(vm);
         }
 
         /// <summary>
-        /// Show the details of a manufacturer, including its categories and the number of articles in each category.
+        /// Show the details of a manufacturer, including its articles.
         /// </summary>
         /// <param name="id">The ID of the manufacturer.</param>
         /// <returns>The view with the manufacturer details.</returns>
@@ -54,16 +53,14 @@ namespace Lagerverwaltung.Controllers
         {
             if (id == null) return NotFound();
             var hersteller = await _context.Herstellers
-                .Include(h => h.Kategories).ThenInclude(k => k.Artikels)
+                .Include(h => h.Artikels).ThenInclude(a => a.KategorieNavigation)
                 .FirstOrDefaultAsync(h => h.ID == id);
             if (hersteller == null) return NotFound();
 
-            var kategorien = hersteller.Kategories.OrderBy(k => k.Name).ToList();
             return View(new HerstellerDetailsViewModel
             {
                 Hersteller = hersteller,
-                Kategorien = kategorien,
-                AnzahlArtikel = kategorien.Sum(k => k.Artikels.Count)
+                Artikel = hersteller.Artikels.OrderBy(a => a.Name).ThenBy(a => a.SerienNum).ToList()
             });
         }
 
@@ -147,9 +144,9 @@ namespace Lagerverwaltung.Controllers
             var hersteller = await _context.Herstellers.FindAsync(id);
             if (hersteller == null) return NotFound();
 
-            if (await _context.Kategories.AnyAsync(k => k.Hersteller == id))
+            if (await _context.Artikels.AnyAsync(a => a.Hersteller == id))
             {
-                TempData["Fehler"] = "Der Hersteller wird noch von Kategorien verwendet und kann nicht gelöscht werden.";
+                TempData["Fehler"] = "Der Hersteller wird noch von Artikeln verwendet und kann nicht gelöscht werden.";
                 return RedirectToAction(nameof(Details), new { id });
             }
 

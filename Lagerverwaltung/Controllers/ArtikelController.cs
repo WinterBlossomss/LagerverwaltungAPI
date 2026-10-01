@@ -28,14 +28,14 @@ namespace Lagerverwaltung.Controllers
         public async Task<IActionResult> Index(ArtikelListeViewModel vm)
         {
             // Start with all articles, including their categories and manufacturers
-            var q = _context.Artikels.Include(a => a.KategorieNavigation).ThenInclude(k => k.HerstellerNavigation).AsQueryable();
+            var q = _context.Artikels.Include(a => a.KategorieNavigation).Include(a => a.HerstellerNavigation).AsQueryable();
             if (!string.IsNullOrWhiteSpace(vm.Suche))
             {
                 var s = vm.Suche.Trim();
                 q = q.Where(a => a.Name.Contains(s) || (a.SerienNum != null && a.SerienNum.ToString()!.Contains(s)));
             }
             if (vm.KategorieId != null) q = q.Where(a => a.Kategorie == vm.KategorieId);
-            if (vm.HerstellerId != null) q = q.Where(a => a.KategorieNavigation.Hersteller == vm.HerstellerId);
+            if (vm.HerstellerId != null) q = q.Where(a => a.Hersteller == vm.HerstellerId);
 
             // Order the articles by name and then by serial number, and load them into the view model
             vm.Artikel = await q.OrderBy(a => a.Name).ThenBy(a => a.SerienNum).ToListAsync();
@@ -56,7 +56,7 @@ namespace Lagerverwaltung.Controllers
         {
             // Validate the ID and retrieve the article from the database, returning NotFound if not found
             if (id == null) return NotFound();
-            var artikel = await _context.Artikels.Include(a => a.KategorieNavigation).ThenInclude(k => k.HerstellerNavigation)
+            var artikel = await _context.Artikels.Include(a => a.KategorieNavigation).Include(a => a.HerstellerNavigation)
                 .FirstOrDefaultAsync(a => a.ID == id);
             if (artikel == null) return NotFound();
 
@@ -86,7 +86,9 @@ namespace Lagerverwaltung.Controllers
         /// <returns>The action result.</returns>
         public async Task<IActionResult> Create()
         {
-            return View(new ArtikelFormViewModel { Kategorien = await KategorienAsync() });
+            var vm = new ArtikelFormViewModel();
+            await FuelleListenAsync(vm);
+            return View(vm);
         }
 
         /// <summary>
@@ -106,13 +108,13 @@ namespace Lagerverwaltung.Controllers
             // Validate the model state and return the view with the categories if invalid
             if (!ModelState.IsValid)
             {
-                vm.Kategorien = await KategorienAsync();
+                await FuelleListenAsync(vm);
                 return View(vm);
             }
 
             // Artikel zuerst speichern, damit die Datenbank die ID (IDENTITY) vergibt; Zugang in derselben Transaktion
             await using var tx = await _context.Database.BeginTransactionAsync();
-            var artikel = new Artikel { Name = vm.Name.Trim(), SerienNum = vm.SerienNum, Kategorie = vm.KategorieId!.Value };
+            var artikel = new Artikel { Name = vm.Name.Trim(), SerienNum = vm.SerienNum, Kategorie = vm.KategorieId!.Value, Hersteller = vm.HerstellerId };
             _context.Artikels.Add(artikel);
             await _context.SaveChangesAsync();
             await _lager.ZugangAsync(artikel.ID, vm.Anfangsbestand, User.GetBenutzerId());
@@ -136,14 +138,16 @@ namespace Lagerverwaltung.Controllers
             if (artikel == null) return NotFound();
 
             // Return the view with the article data and the list of categories for selection
-            return View(new ArtikelFormViewModel
+            var vm = new ArtikelFormViewModel
             {
                 ID = artikel.ID,
                 Name = artikel.Name,
                 SerienNum = artikel.SerienNum,
                 KategorieId = artikel.Kategorie,
-                Kategorien = await KategorienAsync()
-            });
+                HerstellerId = artikel.Hersteller
+            };
+            await FuelleListenAsync(vm);
+            return View(vm);
         }
 
         /// <summary>
@@ -167,13 +171,14 @@ namespace Lagerverwaltung.Controllers
 
             if (!ModelState.IsValid)
             {
-                vm.Kategorien = await KategorienAsync();
+                await FuelleListenAsync(vm);
                 return View(vm);
             }
 
             artikel.Name = vm.Name.Trim();
             artikel.SerienNum = vm.SerienNum;
             artikel.Kategorie = vm.KategorieId!.Value;
+            artikel.Hersteller = vm.HerstellerId;
             await _context.SaveChangesAsync();
 
             TempData["Meldung"] = "Änderungen gespeichert.";
@@ -233,16 +238,17 @@ namespace Lagerverwaltung.Controllers
         /// and return them as a list of SelectListItem objects for use in a dropdown menu.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
-        private async Task<IEnumerable<SelectListItem>> KategorienAsync()
+        private async Task<IEnumerable<SelectListItem>> KategorienAsync() =>
+            await _context.Kategories.OrderBy(k => k.Name).Select(k => new SelectListItem(k.Name, k.ID.ToString())).ToListAsync();
+
+        /// <summary>
+        /// Fill both dropdown lists (categories and manufacturers) of the article form.
+        /// </summary>
+        /// <param name="vm">The article form view model.</param>
+        private async Task FuelleListenAsync(ArtikelFormViewModel vm)
         {
-            var daten = await _context.Kategories
-                .Select(k => new { k.ID, k.Name, Hersteller = k.HerstellerNavigation.Name })
-                .ToListAsync();
-            var gruppen = daten.Select(d => d.Hersteller ?? "Ohne Hersteller").Distinct()
-                .ToDictionary(n => n, n => new SelectListGroup { Name = n });
-            return daten.OrderBy(d => d.Hersteller).ThenBy(d => d.Name)
-                .Select(d => new SelectListItem(d.Name, d.ID.ToString()) { Group = gruppen[d.Hersteller ?? "Ohne Hersteller"] })
-                .ToList();
+            vm.Kategorien = await KategorienAsync();
+            vm.Hersteller = await HerstellerAsync();
         }
 
         /// <summary>

@@ -10,7 +10,6 @@ namespace Lagerverwaltung.ViewModels
     {
         public int ID { get; set; }
         public string Name { get; set; }
-        public string Hersteller { get; set; }
         public int? ModelNum { get; set; }
         public int AnzahlArtikel { get; set; }
     }
@@ -18,9 +17,7 @@ namespace Lagerverwaltung.ViewModels
     public class KategorieListeViewModel
     {
         public string Suche { get; set; }
-        public int? HerstellerId { get; set; }
         public List<KategorieZeile> Kategorien { get; set; } = new();
-        public IEnumerable<SelectListItem> Hersteller { get; set; } = [];
     }
 
     public class KategorieFormViewModel
@@ -32,9 +29,6 @@ namespace Lagerverwaltung.ViewModels
         [Display(Name = "Name")]
         public string Name { get; set; }
 
-        [Display(Name = "Hersteller")]
-        public int? HerstellerId { get; set; }
-
         [Display(Name = "Modellnummer")]
         public int? ModelNum { get; set; }
 
@@ -42,7 +36,6 @@ namespace Lagerverwaltung.ViewModels
         public string ReturnUrl { get; set; }
 
         public bool IstNeu => ID == 0;
-        public IEnumerable<SelectListItem> Hersteller { get; set; } = [];
     }
 
     public class KategorieDetailsViewModel

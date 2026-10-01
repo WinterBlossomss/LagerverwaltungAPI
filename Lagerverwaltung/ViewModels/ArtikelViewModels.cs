@@ -33,12 +33,16 @@ namespace Lagerverwaltung.ViewModels
         [Display(Name = "Kategorie")]
         public int? KategorieId { get; set; }
 
+        [Display(Name = "Hersteller")]
+        public int? HerstellerId { get; set; }
+
         [Range(1, 100000, ErrorMessage = "Mindestens 1.")]
         [Display(Name = "Anfangsbestand im Hauptlager")]
         public int Anfangsbestand { get; set; } = 1;
 
         public bool IstNeu => ID == 0;
         public IEnumerable<SelectListItem> Kategorien { get; set; } = [];
+        public IEnumerable<SelectListItem> Hersteller { get; set; } = [];
     }
 
     public class ArtikelDetailsViewModel

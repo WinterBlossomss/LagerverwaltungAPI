@@ -17,7 +17,7 @@
 
 <div class="row g-0 stat-row mb-4">
     <div class="col-6 col-lg-3 stat"><div class="stat-label">Seriennummer</div><div class="stat-value fs-3">@(a.SerienNum?.ToString() ?? "—")</div></div>
-    <div class="col-6 col-lg-3 stat"><div class="stat-label">Hersteller</div><div class="stat-value fs-3">@(a.KategorieNavigation?.HerstellerNavigation?.Name ?? "—")</div></div>
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Hersteller</div><div class="stat-value fs-3">@(a.HerstellerNavigation?.Name ?? "—")</div></div>
     <div class="col-6 col-lg-3 stat"><div class="stat-label">Bestand gesamt</div><div class="stat-value fs-3">@Model.Standorte.Sum(s => s.Menge)</div></div>
     <div class="col-6 col-lg-3 stat"><div class="stat-label">Standorte</div><div class="stat-value fs-3">@Model.Standorte.Count</div></div>
 </div>
