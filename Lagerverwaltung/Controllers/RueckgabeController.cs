@@ -77,7 +77,7 @@ namespace Lagerverwaltung.Controllers
         {
             // Get the user ID of the currently logged-in user
             var uid = User.GetBenutzerId();
-            vm.Labore = await _lager.Labore().Where(r => r.Benutzer == uid).ToListAsync();
+            vm.Labore = await _lager.GetLabore().Where(r => r.Benutzer == uid).ToListAsync();
             if (!vm.Labore.Any()) return true;
 
             // Determine the selected room based on the provided room ID or default to the first available room

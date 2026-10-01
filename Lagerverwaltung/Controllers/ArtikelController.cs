@@ -230,5 +230,12 @@ namespace Lagerverwaltung.Controllers
         /// <returns>A task representing the asynchronous operation.</returns>
         private async Task<IEnumerable<SelectListItem>> KategorienAsync() =>
             await _context.Kategories.OrderBy(k => k.Name).Select(k => new SelectListItem(k.Name, k.ID.ToString())).ToListAsync();
+
+        /// <summary>
+        /// Get a list of manufacturers from the database, ordered by name, and return them as a list of SelectListItem objects for use in a dropdown menu.
+        /// </summary>
+        /// <returns></returns>
+        private async Task<IEnumerable<SelectListItem>> HerstellerAsync() =>
+            await _context.Herstellers.OrderBy(h => h.Name).Select(h => new SelectListItem(h.Name, h.ID.ToString())).ToListAsync();
     }
 }

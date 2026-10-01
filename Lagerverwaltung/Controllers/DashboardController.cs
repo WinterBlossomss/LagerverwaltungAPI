@@ -35,8 +35,8 @@ namespace Lagerverwaltung.Controllers
                 {
                     StueckHauptlager = await hauptBestand.SumAsync(r => r.Menge),
                     PositionenHauptlager = await hauptBestand.CountAsync(),
-                    AnzahlLabore = await _lager.Labore().CountAsync(),
-                    AnzahlLehrer = await _lager.Labore().Select(r => r.Benutzer).Distinct().CountAsync(),
+                    AnzahlLabore = await _lager.GetLabore().CountAsync(),
+                    AnzahlLehrer = await _lager.GetLabore().Select(r => r.Benutzer).Distinct().CountAsync(),
                     OffeneAusgaben = await _lager.OffeneAusgaben().OrderBy(b => b.Datum).ToListAsync(),
                     OffeneRueckgaben = await _lager.OffeneRueckgaben().OrderBy(b => b.Datum).ToListAsync(),
                     LetzteBewegungen = await _db.Lagerbewegungens.MitDetails()
@@ -47,7 +47,7 @@ namespace Lagerverwaltung.Controllers
 
             // Lehrer-Dashboard anzeigen
             var uid = User.GetBenutzerId();
-            var labore = await _lager.Labore().Where(r => r.Benutzer == uid).ToListAsync();
+            var labore = await _lager.GetLabore().Where(r => r.Benutzer == uid).ToListAsync();
             var ids = labore.Select(l => l.ID).ToList();
 
             var vmL = new DashboardLehrerViewModel

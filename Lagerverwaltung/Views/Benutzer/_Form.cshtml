@@ -1,0 +1,28 @@
+﻿@model BenutzerFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+<input type="hidden" asp-for="ID" />
+
+<div class="mb-3">
+    <label asp-for="Username" class="form-label"></label>
+    <input asp-for="Username" class="form-control" placeholder="Benutzername"/>
+    <span asp-validation-for="Username" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Rolle" class="form-label"></label>
+    <select asp-for="Rolle" class="form-control">
+        <option value="">-- Rolle wählen --</option>
+        @foreach (var rolle in Model.Rollen)
+        {
+            <option value="@rolle.Value">@rolle.Text</option>
+        }
+    </select>
+    <span asp-validation-for="Rolle" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Passwort" class="form-label"></label>
+    <input asp-for="Passwort" class="form-control" type="password" placeholder="Passwort"/>
+    <span asp-validation-for="Passwort" class="text-danger"></span>
+</div>

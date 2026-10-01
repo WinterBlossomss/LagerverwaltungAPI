@@ -131,7 +131,7 @@ namespace Lagerverwaltung.Controllers
                         await _lager.AusgebenAsync(p.ArtikelId, p.Menge, vm.ZielRaumId!.Value, User.GetBenutzerId());
                     await _lager.SpeichernAsync();
 
-                    var raum = await _lager.Labore().FirstAsync(r => r.ID == vm.ZielRaumId);
+                    var raum = await _lager.GetLabore().FirstAsync(r => r.ID == vm.ZielRaumId);
                     TempData["Meldung"] = $"{auswahl.Count} Position(en) an {raum.BenutzerNavigation.Username} ({raum.Anzeigename}) übergeben. Wartet auf digitale Bestätigung.";
                     return RedirectToAction(nameof(Create));
                 }
@@ -173,7 +173,7 @@ namespace Lagerverwaltung.Controllers
                     Menge = gewaehlt.TryGetValue(ra.Art, out var m) ? m : 1
                 }).ToList();
 
-            var labore = await _lager.Labore().ToListAsync();
+            var labore = await _lager.GetLabore().ToListAsync();
             vm.Labore = labore.Select(l => new SelectListItem($"{l.Anzeigename} · {l.BenutzerNavigation.Username}", l.ID.ToString()));
             vm.Verantwortliche = labore.ToDictionary(l => l.ID, l => l.BenutzerNavigation.Username);
         }

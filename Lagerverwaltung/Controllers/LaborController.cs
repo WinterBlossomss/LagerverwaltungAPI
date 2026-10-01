@@ -28,8 +28,8 @@ namespace Lagerverwaltung.Controllers
 
             // Admin sees everything, teachers only see their own
             var labore = isAdmin
-                ? await _lager.Labore().ToListAsync()
-                : await _lager.Labore().Where(r => r.Benutzer == uid).ToListAsync();
+                ? await _lager.GetLabore().ToListAsync()
+                : await _lager.GetLabore().Where(r => r.Benutzer == uid).ToListAsync();
 
             // Create the view model with the list of labs and the search term
             var vm = new LaborViewModel { Auswahl = labore, Suche = suche };

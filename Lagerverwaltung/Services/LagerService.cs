@@ -105,9 +105,18 @@ namespace Lagerverwaltung.Services
         /// Returns all laboratories in the system
         /// </summary>
         /// <returns>The laboratories.</returns>
-        public IQueryable<Raum> Labore()
+        public IQueryable<Raum> GetLabore()
         {
             return _db.Raums.MitDetails().Where(r => r.RaumTypNavigation.Name == RaumTypen.Labor).OrderBy(r => r.RaumNum);
+        }
+
+        /// <summary>
+        /// Returns all roles in the system
+        /// </summary>
+        /// <returns></returns>
+        public IQueryable<Rolle> GetRollen()
+        {
+            return _db.Rolles.OrderBy(r => r.Name);
         }
 
         /// <summary>
@@ -115,7 +124,7 @@ namespace Lagerverwaltung.Services
         /// </summary>
         public Task<Raum> LaborVonAsync(int lehrerId)
         {
-            return Labore().FirstOrDefaultAsync(r => r.Benutzer == lehrerId);
+            return GetLabore().FirstOrDefaultAsync(r => r.Benutzer == lehrerId);
         }
 
         /// <summary>
@@ -124,7 +133,7 @@ namespace Lagerverwaltung.Services
         /// </summary>
         public async Task PruefeEinLaborProLehrerAsync(int lehrerId, int raumId)
         {
-            var anderes = await Labore().FirstOrDefaultAsync(r => r.Benutzer == lehrerId && r.ID != raumId);
+            var anderes = await GetLabore().FirstOrDefaultAsync(r => r.Benutzer == lehrerId && r.ID != raumId);
             if (anderes != null)
                 throw new LagerException($"Diese Lehrkraft ist bereits {anderes.Anzeigename} zugeordnet. Eine Lehrkraft kann nur ein Labor haben.");
         }
@@ -203,6 +212,7 @@ namespace Lagerverwaltung.Services
                 OffeneRueckgaben = rueckgaben.Count(x => x == r.ID)
             }).ToList();
         }
+
         /// <summary>
         /// Processes the addition of new items to the main storage, updating the stock and recording the movement in the system.
         /// </summary>
@@ -216,6 +226,7 @@ namespace Lagerverwaltung.Services
             await AendereBestandAsync(haupt.ID, artikelId, menge);
             await BucheAsync(BewegungArten.Zugang, artikelId, menge, haupt.ID, haupt.ID, adminId, true);
         }
+
         /// <summary>
         /// Processes the issuance of items from the main storage to a laboratory, updating the stock and recording the movement in the system.
         /// </summary>
@@ -229,13 +240,14 @@ namespace Lagerverwaltung.Services
         {
             await PruefeMengeAsync(artikelId, menge);
             var haupt = await GetLagerAsync(RaumTypen.Hauptlager);
-            var labor = await Labore().FirstOrDefaultAsync(r => r.ID == laborId)
+            var labor = await GetLabore().FirstOrDefaultAsync(r => r.ID == laborId)
                 ?? throw new LagerException("Labor nicht gefunden.");
 
             // Bestand verlässt das Hauptlager sofort, kommt aber erst nach der Bestätigung im Labor an.
             await AendereBestandAsync(haupt.ID, artikelId, -menge);
             await BucheAsync(BewegungArten.Ausgabe, artikelId, menge, haupt.ID, labor.ID, adminId, false);
         }
+
         /// <summary>
         /// Processes the confirmation of received items in a laboratory, updating the stock and recording the movement in the system.
         /// </summary>
@@ -267,7 +279,7 @@ namespace Lagerverwaltung.Services
         /// <exception cref="LagerException">Thrown when the laboratory or teacher is not found, or when the teacher is not responsible for the laboratory.</exception>
         public async Task ZurueckgebenAsync(int laborId, int artikelId, int menge, int lehrerId)
         {
-            var labor = await Labore().FirstOrDefaultAsync(r => r.ID == laborId)
+            var labor = await GetLabore().FirstOrDefaultAsync(r => r.ID == laborId)
                 ?? throw new LagerException("Labor nicht gefunden.");
             if (labor.Benutzer != lehrerId)
                 throw new LagerException("Sie sind für dieses Labor nicht zuständig.");
@@ -327,11 +339,13 @@ namespace Lagerverwaltung.Services
             await AendereBestandAsync(haupt.ID, artikelId, menge);
             await BucheAsync(BewegungArten.Einbuchung, artikelId, menge, umb.ID, haupt.ID, adminId, true);
         }
+
         /// <summary>
         /// Saves all changes made in the context to the database asynchronously.
         /// </summary>
         /// <returns></returns>
         public Task SpeichernAsync() => _db.SaveChangesAsync();
+
         /// <summary>
         /// Changes the stock of a specific article in a specific room by a given delta (positive or negative).
         /// </summary>
@@ -350,6 +364,7 @@ namespace Lagerverwaltung.Services
             else if (neu == 0) _db.RaumArtikels.Remove(ra);
             else ra.Menge = neu;
         }
+
         /// <summary>
         /// Books a movement of items in the system, recording the details of the movement in the Lagerbewegungen table.
         /// </summary>
@@ -376,8 +391,9 @@ namespace Lagerverwaltung.Services
                 IsDone = isDone
             });
         }
+
         /// <summary>
-        /// Checks the validity of the quantity for a specific article, ensuring that it meets the requirements for movement 
+        /// Checks the validity of the quantity for a specific article, ensuring that it meets the requirements for movement
         /// (e.g., minimum quantity, serial number constraints).
         /// </summary>
         /// <param name="artikelId">The ID of the article.</param>
