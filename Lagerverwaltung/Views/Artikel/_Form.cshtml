@@ -9,12 +9,11 @@
     <span asp-validation-for="Name" class="text-danger small"></span>
 </div>
 
-<div class="mb-3">
-    <label asp-for="KategorieId" class="form-label"></label>
+<div class="d-flex gap-2">
     <select asp-for="KategorieId" asp-items="Model.Kategorien" class="form-select">
         <option value="">Kategorie wählen …</option>
     </select>
-    <span asp-validation-for="KategorieId" class="text-danger small"></span>
+    <a asp-controller="Kategorie" asp-action="Create" asp-route-returnUrl="@(Context.Request.Path + Context.Request.QueryString)" class="btn btn-outline-secondary text-nowrap">+ Kategorie</a>
 </div>
 
 <div class="mb-3">

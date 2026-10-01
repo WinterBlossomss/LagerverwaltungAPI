@@ -1,59 +1,64 @@
-@model IEnumerable<Lagerverwaltung.Models.Kategorie>
-
+@model KategorieListeViewModel
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Kategorien";
 }
 
-<h1>Index</h1>
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Stammdaten</div>
+        <h1 class="h2 mb-0">Kategorien</h1>
+    </div>
+    <a class="btn btn-primary" asp-action="Create">Kategorie anlegen</a>
+</div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Name)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Hersteller)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ModelNum)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Artikels)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.HerstellerNavigation)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(model => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(model => item.Hersteller)
-            </td>
-            <td>
-                @Html.DisplayFor(model => item.ModelNum)
-            </td>
-            <td>
-                @Html.DisplayFor(model => item.Artikels)
-            </td>
-            <td>
-                @Html.DisplayFor(model => item.HerstellerNavigation)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.ID">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.ID">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.ID">Delete</a>
-            </td>
-        </tr>
+<form method="get" asp-action="Index" class="row g-3 align-items-end mb-3">
+    <div class="col-12 col-md-6">
+        <label asp-for="Suche" class="form-label small">Suche</label>
+        <input asp-for="Suche" class="form-control" placeholder="Name, Hersteller oder Modellnummer" />
+    </div>
+    <div class="col-8 col-md-4">
+        <label asp-for="HerstellerId" class="form-label small">Hersteller</label>
+        <select asp-for="HerstellerId" asp-items="Model.Hersteller" class="form-select">
+            <option value="">Alle</option>
+        </select>
+    </div>
+    <div class="col-4 col-md-2">
+        <button type="submit" class="btn btn-secondary w-100">Filtern</button>
+    </div>
+</form>
+
+@if (!Model.Kategorien.Any())
+{
+    <p class="text-body-secondary border-top pt-3">Keine Kategorien gefunden.</p>
 }
-    </tbody>
-</table>
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Hersteller</th>
+                    <th>Modellnummer</th>
+                    <th class="text-end">Artikel</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var k in Model.Kategorien)
+                {
+                    <tr>
+                        <td class="fw-semibold">@k.Name</td>
+                        <td>@(k.Hersteller ?? "—")</td>
+                        <td>@(k.ModelNum?.ToString() ?? "—")</td>
+                        <td class="text-end">@k.AnzahlArtikel</td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Details" asp-route-id="@k.ID" class="btn btn-sm btn-outline-secondary">Details</a>
+                            <a asp-action="Edit" asp-route-id="@k.ID" class="btn btn-sm btn-outline-secondary">Bearbeiten</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

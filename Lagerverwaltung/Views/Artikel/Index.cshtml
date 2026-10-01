@@ -22,6 +22,10 @@
             <option value="">Alle</option>
         </select>
     </div>
+    <label asp-for="HerstellerId" class="form-label small">Hersteller</label>
+    <select asp-for="HerstellerId" asp-items="Model.Hersteller" class="form-select">
+        <option value="">Alle</option>
+    </select>
     <div class="col-4 col-md-2">
         <button type="submit" class="btn btn-secondary w-100">Filtern</button>
     </div>
@@ -39,6 +43,7 @@ else
                 <tr>
                     <th>Bezeichnung</th>
                     <th>Kategorie</th>
+                    <th>Hersteller</th>
                     <th>Seriennummer</th>
                     <th class="text-end">Bestand gesamt</th>
                     <th></th>
@@ -50,6 +55,7 @@ else
                     <tr>
                         <td class="fw-semibold">@a.Name</td>
                         <td>@a.KategorieNavigation?.Name</td>
+                        <td>@(a.KategorieNavigation?.HerstellerNavigation?.Name ?? "—")</td>
                         <td>@(a.SerienNum?.ToString() ?? "—")</td>
                         <td class="text-end">@(Model.Gesamtbestand.TryGetValue(a.ID, out var s) ? s : 0)</td>
                         <td class="text-end text-nowrap">

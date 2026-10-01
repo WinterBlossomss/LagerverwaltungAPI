@@ -1,4 +1,5 @@
 ﻿#nullable disable
+
 using System.ComponentModel.DataAnnotations;
 using Lagerverwaltung.Models;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -12,6 +13,8 @@ namespace Lagerverwaltung.ViewModels
         public List<Artikel> Artikel { get; set; } = new();
         public Dictionary<int, int> Gesamtbestand { get; set; } = new();
         public IEnumerable<SelectListItem> Kategorien { get; set; } = [];
+        public int? HerstellerId { get; set; }
+        public IEnumerable<SelectListItem> Hersteller { get; set; } = [];
     }
 
     public class ArtikelFormViewModel

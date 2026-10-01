@@ -35,6 +35,7 @@ namespace Lagerverwaltung.Controllers
                 q = q.Where(a => a.Name.Contains(s) || (a.SerienNum != null && a.SerienNum.ToString()!.Contains(s)));
             }
             if (vm.KategorieId != null) q = q.Where(a => a.Kategorie == vm.KategorieId);
+            if (vm.HerstellerId != null) q = q.Where(a => a.KategorieNavigation.Hersteller == vm.HerstellerId);
 
             // Order the articles by name and then by serial number, and load them into the view model
             vm.Artikel = await q.OrderBy(a => a.Name).ThenBy(a => a.SerienNum).ToListAsync();
@@ -42,6 +43,7 @@ namespace Lagerverwaltung.Controllers
                 .Select(g => new { g.Key, Summe = g.Sum(x => x.Menge) })
                 .ToDictionaryAsync(x => x.Key, x => x.Summe);
             vm.Kategorien = await KategorienAsync();
+            vm.Hersteller = await HerstellerAsync();
             return View(vm);
         }
 
@@ -228,8 +230,17 @@ namespace Lagerverwaltung.Controllers
         /// and return them as a list of SelectListItem objects for use in a dropdown menu.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
-        private async Task<IEnumerable<SelectListItem>> KategorienAsync() =>
-            await _context.Kategories.OrderBy(k => k.Name).Select(k => new SelectListItem(k.Name, k.ID.ToString())).ToListAsync();
+        private async Task<IEnumerable<SelectListItem>> KategorienAsync()
+        {
+            var daten = await _context.Kategories
+                .Select(k => new { k.ID, k.Name, Hersteller = k.HerstellerNavigation.Name })
+                .ToListAsync();
+            var gruppen = daten.Select(d => d.Hersteller ?? "Ohne Hersteller").Distinct()
+                .ToDictionary(n => n, n => new SelectListGroup { Name = n });
+            return daten.OrderBy(d => d.Hersteller).ThenBy(d => d.Name)
+                .Select(d => new SelectListItem(d.Name, d.ID.ToString()) { Group = gruppen[d.Hersteller ?? "Ohne Hersteller"] })
+                .ToList();
+        }
 
         /// <summary>
         /// Get a list of manufacturers from the database, ordered by name, and return them as a list of SelectListItem objects for use in a dropdown menu.

@@ -1,54 +1,28 @@
-@model Lagerverwaltung.Models.Kategorie
-
+@model KategorieFormViewModel
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Kategorie anlegen";
+    var zurueck = Url.IsLocalUrl(Model.ReturnUrl) ? Model.ReturnUrl : Url.Action("Index");
 }
 
-<h1>Create</h1>
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Stammdaten · Kategorie</div>
+        <h1 class="h2 mb-0">Kategorie anlegen</h1>
+    </div>
+</div>
 
-<h4>Kategorie</h4>
-<hr />
 <div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-            <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
-                <input asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="Hersteller" class="control-label"></label>
-                <input asp-for="Hersteller" class="form-control" />
-                <span asp-validation-for="Hersteller" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="ModelNum" class="control-label"></label>
-                <input asp-for="ModelNum" class="form-control" />
-                <span asp-validation-for="ModelNum" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="Artikels" class="control-label"></label>
-                <input asp-for="Artikels" class="form-control" />
-                <span asp-validation-for="Artikels" class="text-danger"></span>
-            </div>
-
-            <div class="form-group">
-                <label asp-for="HerstellerNavigation" class="control-label"></label>
-                <input asp-for="HerstellerNavigation" class="form-control" />
-                <span asp-validation-for="HerstellerNavigation" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+    <div class="col-lg-6">
+        <form asp-action="Create" method="post">
+            <partial name="_Form" model="Model" />
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Anlegen</button>
+                <a href="@zurueck" class="btn btn-outline-secondary">Abbrechen</a>
             </div>
         </form>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}
