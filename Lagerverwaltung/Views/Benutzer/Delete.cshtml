@@ -12,11 +12,11 @@
 </div>
 
 <dl class="row mb-4">
-    <dt class="col-sm-3">Rolle</dt><dd class="col-sm-9">@b.Rolle</dd>
-    <dt class="col-sm-3">Labor</dt><dd class="col-sm-9">@(string.IsNullOrEmpty(Model.Labor) ? "—" : Model.Labor)</dd>
+    <dt class="col-sm-3">Rolle</dt><dd class="col-sm-9">@b.RolleNavigation?.Name</dd>
+    <dt class="col-sm-3">Labor</dt><dd class="col-sm-9">@Model.Labor</dd>
 </dl>
 
-if(Model.KannGeloeschtWerden)
+@if (Model.KannGeloeschtWerden)
 {
     <p>Soll dieser Benutzer wirklich gelöscht werden?</p>
     <form asp-action="Delete" asp-route-id="@b.ID" method="post" class="d-flex gap-2">

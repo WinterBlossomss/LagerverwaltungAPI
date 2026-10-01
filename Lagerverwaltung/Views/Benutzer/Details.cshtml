@@ -16,8 +16,8 @@
 </div>
 
 <div class="row g-0 stat-row mb-4">
-    <div class="col-6 col-lg-3 stat"><div class="stat-label">Rolle</div><div class="stat-value fs-3">@b.Rolle</div></div>
-    <div class="col-6 col-lg-3 stat"><div class="stat-label">Labor</div><div class="stat-value fs-3">@(string.IsNullOrEmpty(Model.Labor) ? "—" : Model.Labor)</div></div>
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Rolle</div><div class="stat-value fs-3">@b.RolleNavigation?.Name</div></div>
+<div class="col-6 col-lg-3 stat"><div class="stat-label">Labor</div><div class="stat-value fs-3">@Model.Labor</div></div>
 </div>
 
 <h2 class="h5 mb-2">Bewegungen</h2>

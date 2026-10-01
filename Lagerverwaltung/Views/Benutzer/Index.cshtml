@@ -12,24 +12,24 @@
 </div>
 
 <form method="get" class="row g-2 align-items-end mb-4">
-    <div class="col-12 col-md-6">
-        <label asp-for="Suche" class="form-label small">Suche</label>
-        <input asp-for="Suche" class="form-control" placeholder="Benutzer suchen..." />
+    <div class="col-12 col-md-4">
+        <label asp-for="Suche" class="form-label small"></label>
+        <input asp-for="Suche" class="form-control" placeholder="Name, Rolle oder Raum" />
     </div>
-    <div class="col-8 col-md-4">
-        <label asp-for="Rolle" class="form-label small">Rolle</label>
-        <select asp-for="Rolle" asp-items="Model.Rollen" class="form-control">
+    <div class="col-6 col-md-3">
+        <label asp-for="Rolle" class="form-label small"></label>
+        <select asp-for="Rolle" asp-items="Model.Rollen" class="form-select">
             <option value="">Alle Rollen</option>
         </select>
     </div>
-    <div class="col-8 col-md-4">
-        <label asp-for="Labor" class="form-label small">Labor</label>
-        <select asp-for="Labor" asp-items="Model.Labore" class="form-control">
+    <div class="col-6 col-md-3">
+        <label asp-for="Labor" class="form-label small"></label>
+        <select asp-for="Labor" asp-items="Model.Labore" class="form-select">
             <option value="">Alle Labore</option>
         </select>
     </div>
-    <div class="col-4 col-md-2">
-        <button type="submit" class="btn btn-secondary w-100">Filtern</button> 
+    <div class="col-12 col-md-2">
+        <button type="submit" class="btn btn-secondary w-100">Filtern</button>
     </div>
 </form>
 
@@ -54,10 +54,8 @@ else
                 {
                     <tr>
                         <td class="fw-semibold">@b.Username</td>
-                        <td>@b.RolleNavigation?.Name</td>
-                        <td>@(b.Raums.Any(r => r.RaumNum != null)
-                                ? string.Join(", ", b.Raums.Where(r => r.RaumNum != null).OrderBy(r => r.RaumNum).Select(r => "Raum " + r.RaumNum))
-                                : "—")</td>
+                        <td>@b.Rolle</td>
+                        <td>@b.Labor</td>
                         <td class="text-end text-nowrap">
                             <a asp-action="Details" asp-route-id="@b.ID" class="btn btn-sm btn-outline-secondary">Details</a>
                             <a asp-action="Edit" asp-route-id="@b.ID" class="btn btn-sm btn-outline-secondary">Bearbeiten</a>

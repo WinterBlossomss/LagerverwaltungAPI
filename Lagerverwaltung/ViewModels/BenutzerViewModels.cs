@@ -7,11 +7,19 @@ namespace Lagerverwaltung.ViewModels
     public class BenutzerListeViewModel
     {
         public string Suche { get; set; }
-        public List<Benutzer> Benutzer { get; set; } = new();
-        public string Labor { get; set; }
         public string Rolle { get; set; }
-        public IEnumerable<SelectListItem> Labore { get; set; } = [];
+        public string Labor { get; set; }
+        public List<BenutzerZeile> Benutzer { get; set; } = new();
         public IEnumerable<SelectListItem> Rollen { get; set; } = [];
+        public IEnumerable<SelectListItem> Labore { get; set; } = [];
+    }
+
+    public class BenutzerZeile
+    {
+        public int ID { get; set; }
+        public string Username { get; set; }
+        public string Rolle { get; set; }
+        public string Labor { get; set; }
     }
 
     public class BenutzerFormViewModel
@@ -19,7 +27,7 @@ namespace Lagerverwaltung.ViewModels
         public int ID { get; set; }
 
         [Required(ErrorMessage = "Bitte einen Benutzernamen eingeben.")]
-        [StringLength(50)]
+        [StringLength(20)]
         [Display(Name = "Benutzername")]
         public string Username { get; set; }
 
@@ -27,12 +35,11 @@ namespace Lagerverwaltung.ViewModels
         [Display(Name = "Rolle")]
         public string Rolle { get; set; }
 
-        [Required(ErrorMessage = "Bitte ein Labor wählen.")]
         [Display(Name = "Labor")]
         public int? LaborId { get; set; }
 
-        [Required(ErrorMessage = "Bitte ein Passwort eingeben.")]
-        [StringLength(100, MinimumLength = 3)]
+        [StringLength(100, MinimumLength = 3, ErrorMessage = "Mindestens 3 Zeichen.")]
+        [DataType(DataType.Password)]
         [Display(Name = "Passwort")]
         public string Password { get; set; }
 
