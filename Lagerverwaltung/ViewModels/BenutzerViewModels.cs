@@ -10,6 +10,8 @@ namespace Lagerverwaltung.ViewModels
         public List<Benutzer> Benutzer { get; set; } = new();
         public string Labor { get; set; }
         public string Rolle { get; set; }
+        public IEnumerable<SelectListItem> Labore { get; set; } = [];
+        public IEnumerable<SelectListItem> Rollen { get; set; } = [];
     }
 
     public class BenutzerFormViewModel
@@ -29,6 +31,11 @@ namespace Lagerverwaltung.ViewModels
         [Display(Name = "Labor")]
         public int? LaborId { get; set; }
 
+        [Required(ErrorMessage = "Bitte ein Passwort eingeben.")]
+        [StringLength(100, MinimumLength = 3)]
+        [Display(Name = "Passwort")]
+        public string Password { get; set; }
+
         public bool IstNeu => ID == 0;
 
         public IEnumerable<SelectListItem> Rollen { get; set; } = [];
@@ -38,6 +45,7 @@ namespace Lagerverwaltung.ViewModels
     public class BenutzerDetailsViewModel
     {
         public Benutzer Benutzer { get; set; }
+        public string Labor { get; set; }
         public List<Lagerbewegungen> Bewegungen { get; set; } = new();
         public bool KannGeloeschtWerden { get; set; }
     }

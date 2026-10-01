@@ -1,5 +1,27 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model BenutzerFormViewModel
 @{
+    ViewData["Title"] = "Benutzer erfassen";
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Benutzer</div>
+        <h1 class="h2 mb-0">Benutzer erfassen</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <form asp-action="Create" method="post">
+            <partial name="_Form" model="Model" />
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary">Erfassen</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Abbrechen</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

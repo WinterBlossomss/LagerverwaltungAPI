@@ -34,6 +34,7 @@ namespace Lagerverwaltung.Services
         public const string Uebernahme = "Übernahme"; // Digitale Bestätigung durch die LehrerIn
         public const string Rueckgabe = "Rückgabe"; // Labor -> Umbuchungslager, IsDone = vom Admin entgegengenommen
         public const string Einbuchung = "Einbuchung"; // Umbuchungslager -> Hauptlager
+        public const string Stornieren = "Stornieren"; // Storniert, z.B. bei Fehlern
     }
 
     /// <summary>

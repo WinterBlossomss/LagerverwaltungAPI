@@ -22,13 +22,24 @@ namespace Lagerverwaltung.Controllers
         public async Task<IActionResult> Index(BenutzerListeViewModel vm)
         {
             var q = _context.Benutzers.Include(b => b.Raums).Include(b => b.RolleNavigation).AsQueryable();
+
             if (!string.IsNullOrWhiteSpace(vm.Suche))
             {
                 var s = vm.Suche.Trim();
                 q = q.Where(a => a.Username.Contains(s) || a.RolleNavigation.Name.Contains(s) || a.Raums.Any(r => r.RaumNum.ToString().Contains(s)));
             }
+            if (int.TryParse(vm.Rolle, out var rolleId))
+            {
+                q = q.Where(a => a.Rolle == rolleId);
+            }
+            if (int.TryParse(vm.Labor, out var laborId))
+            {
+                q = q.Where(a => a.Raums.Any(r => r.ID == laborId));
+            }
 
-            vm.Benutzer = await q.OrderBy(a => a.Username).ThenBy(a => a.RolleNavigation.Name).ThenBy(a => a.Raums.FirstOrDefault().RaumNum).ToListAsync();
+            vm.Benutzer = await q.OrderBy(a => a.Username).ToListAsync();
+            vm.Rollen = await RollenAsync();
+            vm.Labore = await RaumsAsync();
             return View(vm);
         }
 
@@ -47,6 +58,10 @@ namespace Lagerverwaltung.Controllers
             var vm = new BenutzerDetailsViewModel
             {
                 Benutzer = benutzer,
+                Labor = string.Join(", ", benutzer.Raums
+                    .Where(r => r.RaumNum != null)
+                    .OrderBy(r => r.RaumNum)
+                    .Select(r => r.RaumNum)),
                 Bewegungen = await _context.Lagerbewegungens.MitDetails().Where(b => b.Benutzer == id).OrderByDescending(b => b.Datum).ThenByDescending(b => b.ID).Take(20).ToListAsync(),
                 KannGeloeschtWerden = !await _context.Lagerbewegungens.AnyAsync(b => b.Benutzer == id) && !await _context.Raums.AnyAsync(r => r.Benutzer == id)
             };
@@ -204,6 +219,10 @@ namespace Lagerverwaltung.Controllers
         /// </summary>
         /// <returns></returns>
         private async Task<IEnumerable<SelectListItem>> RaumsAsync() =>
-            await _context.Raums.OrderBy(r => r.RaumNum).Select(r => new SelectListItem(r.RaumNum.ToString(), r.ID.ToString())).ToListAsync();
+            await _context.Raums
+                .Where(r => r.RaumTypNavigation.Name == RaumTypen.Labor)
+                .OrderBy(r => r.RaumNum)
+                .Select(r => new SelectListItem("Raum " + r.RaumNum, r.ID.ToString()))
+                .ToListAsync();
     }
 }
