@@ -99,3 +99,38 @@
         </div>
     </div>
 </form>
+<h2 class="h5 mt-5 mb-2">Offene Rückgaben</h2>
+@if (!Model.OffeneRueckgaben.Any())
+{
+    <p class="text-body-secondary border-top pt-3">Keine offenen Rückgaben für @Model.RaumName.</p>
+}
+else
+{
+    <p class="small text-body-secondary">Noch nicht vom Administrator entgegengenommen. Bis dahin kann die Rückgabe storniert werden.</p>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr><th>Datum</th><th>Bezeichnung</th><th>Seriennummer</th><th class="text-end">Menge</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model.OffeneRueckgaben)
+                {
+                    <tr>
+                        <td>@b.Datum.ToString("dd.MM.yyyy")</td>
+                        <td class="fw-semibold">@b.ArtikelNavigation.Name</td>
+                        <td>@(b.ArtikelNavigation.SerienNum?.ToString() ?? "ohne")</td>
+                        <td class="text-end">@(b.ArtikelMenge ?? 1)</td>
+                        <td class="text-end">
+                            <form asp-action="Stornieren" method="post" class="d-inline"
+                                  onsubmit="return confirm('Rückgabe von @b.ArtikelNavigation.Name stornieren?');">
+                                <input type="hidden" name="id" value="@b.ID" />
+                                <input type="hidden" name="raumId" value="@Model.RaumId" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Stornieren</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

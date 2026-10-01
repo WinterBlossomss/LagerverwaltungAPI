@@ -87,6 +87,13 @@ namespace Lagerverwaltung.Controllers
             // Fill the view model with the selected room's ID and name, and retrieve the available items in that room
             vm.RaumId = raum.ID;
             vm.RaumName = raum.Anzeigename;
+
+            // Retrieve the open returns for the selected room, ordered by date and ID, and populate the view model's open returns
+            vm.OffeneRueckgaben = await _lager.OffeneRueckgaben()
+                .Where(b => b.VonRaum == raum.ID)
+                .OrderByDescending(b => b.Datum).ThenByDescending(b => b.ID)
+                .ToListAsync();
+
             var gewaehlt = vm.Positionen.Where(p => p.Ausgewaehlt).ToDictionary(p => p.ArtikelId, p => p.Menge);
 
             // Retrieve the items in the selected room, including their details and availability, and populate the view model's positions
@@ -106,6 +113,30 @@ namespace Lagerverwaltung.Controllers
                     Menge = gewaehlt.TryGetValue(ra.Art, out var m) ? m : 1
                 }).ToList();
             return true;
+        }
+
+        /// <summary>
+        /// Handles the POST request to cancel a return.
+        /// It attempts to cancel the return for the specified item and room, and provides feedback to the user.
+        /// </summary>
+        /// <param name="id">The ID of the return to cancel.</param>
+        /// <param name="raumId">The ID of the room where the return is taking place.</param>
+        /// <returns></returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Stornieren(int id, int raumId)
+        {
+            try
+            {
+                await _lager.RueckgabeStornierenAsync(id, User.GetBenutzerId());
+                await _lager.SpeichernAsync();
+                TempData["Meldung"] = "Rückgabe storniert. Der Gegenstand ist wieder im Labor.";
+            }
+            catch (LagerException ex)
+            {
+                TempData["Fehler"] = ex.Message;
+            }
+            return RedirectToAction(nameof(Index), new { raumId });
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿#nullable disable
+
 using System.ComponentModel.DataAnnotations;
 using Lagerverwaltung.Models;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -24,6 +25,7 @@ namespace Lagerverwaltung.ViewModels
         [Required(ErrorMessage = "Bitte ein Labor wählen.")]
         [Display(Name = "Labor")]
         public int? ZielRaumId { get; set; }
+
         public string Suche { get; set; }
         public List<AuswahlPosition> Positionen { get; set; } = new();
         public IEnumerable<SelectListItem> Labore { get; set; } = [];
@@ -42,6 +44,7 @@ namespace Lagerverwaltung.ViewModels
         public string RaumName { get; set; }
         public List<Raum> Labore { get; set; } = new();
         public List<AuswahlPosition> Positionen { get; set; } = new();
+        public List<Lagerbewegungen> OffeneRueckgaben { get; set; } = new();
     }
 
     public class UmbuchungBestand

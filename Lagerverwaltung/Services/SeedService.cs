@@ -36,7 +36,7 @@ namespace Lagerverwaltung.Services
                 logger.LogInformation("Seeding Stammdaten...");
                 foreach (var t in new[] { RaumTypen.Hauptlager, RaumTypen.Umbuchungslager, RaumTypen.Labor })
                     await GetOrAddRaumTypAsync(context, t);
-                foreach (var a in new[] { BewegungArten.Zugang, BewegungArten.Ausgabe, BewegungArten.Uebernahme, BewegungArten.Rueckgabe, BewegungArten.Einbuchung })
+                foreach (var a in new[] { BewegungArten.Zugang, BewegungArten.Ausgabe, BewegungArten.Uebernahme, BewegungArten.Rueckgabe, BewegungArten.Einbuchung, BewegungArten.Stornieren })
                     await GetOrAddBewegungArtAsync(context, a);
 
                 // Retrieve users for seeding rooms and articles
@@ -134,8 +134,16 @@ namespace Lagerverwaltung.Services
                 (22, "USB-C-auf-HDMI-Adapter", "Kabel & Adapter", null),
                 (23, "Steckdosenleiste 6-fach", "Sonstiges", null),
             };
+            // Die Nummern 1–23 sind nur Seed-Schlüssel; die echte ID vergibt die Datenbank (IDENTITY)
+            var neu = new Dictionary<int, Artikel>();
             foreach (var a in artikel)
-                context.Artikels.Add(new Artikel { ID = a.Id, Name = a.Name, SerienNum = a.Sn, KategorieNavigation = kategorien[a.Kat] });
+            {
+                var e = new Artikel { Name = a.Name, SerienNum = a.Sn, KategorieNavigation = kategorien[a.Kat] };
+                context.Artikels.Add(e);
+                neu[a.Id] = e;
+            }
+            await context.SaveChangesAsync();
+            int Id(int nr) => neu[nr].ID;
 
             // Aktueller Bestand (Artikel, Raum, Menge)
             var bestand = new (int Art, Raum Raum, int Menge)[]
@@ -149,14 +157,14 @@ namespace Lagerverwaltung.Services
                 (17, umb, 1), (22, umb, 2),
             };
             foreach (var b in bestand)
-                context.RaumArtikels.Add(new RaumArtikel { Art = b.Art, Raum = b.Raum.ID, Menge = b.Menge });
+                context.RaumArtikels.Add(new RaumArtikel { Art = Id(b.Art), Raum = b.Raum.ID, Menge = b.Menge });
 
             void Buche(string art, int artikelId, int menge, Raum von, Raum zu, Benutzer user, bool done, int tageZurueck) =>
                 context.Lagerbewegungens.Add(new Lagerbewegungen
                 {
                     Datum = heute.AddDays(-tageZurueck),
                     Bewegung = arten[art].ID,
-                    Artikel = artikelId,
+                    Artikel = Id(artikelId),
                     ArtikelMenge = menge,
                     VonRaum = von.ID,
                     ZuRaum = zu.ID,

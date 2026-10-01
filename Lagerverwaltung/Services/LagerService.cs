@@ -294,6 +294,27 @@ namespace Lagerverwaltung.Services
         }
 
         /// <summary>
+        /// Storniert eine Rückgabe, solange der Administrator sie noch nicht entgegengenommen hat.
+        /// Bucht den Bestand vom Umbuchungslager zurück ins Labor.
+        /// </summary>
+        /// <param name="bewegungId">The ID of the open return movement.</param>
+        /// <param name="lehrerId">The ID of the teacher cancelling the return.</param>
+        /// <exception cref="LagerException">Thrown when the return is not open anymore or the teacher is not responsible.</exception>
+        public async Task RueckgabeStornierenAsync(int bewegungId, int lehrerId)
+        {
+            var b = await OffeneRueckgaben().FirstOrDefaultAsync(x => x.ID == bewegungId)
+                ?? throw new LagerException("Rückgabe nicht gefunden oder bereits vom Administrator entgegengenommen.");
+            if (b.VonRaumNavigation.Benutzer != lehrerId)
+                throw new LagerException("Sie sind für dieses Labor nicht zuständig.");
+
+            var menge = b.ArtikelMenge ?? 1;
+            await AendereBestandAsync(b.ZuRaum, b.Artikel, -menge);   // Umbuchungslager
+            await AendereBestandAsync(b.VonRaum, b.Artikel, menge);   // Labor
+            b.IsDone = true;
+            await BucheAsync(BewegungArten.Stornieren, b.Artikel, menge, b.ZuRaum, b.VonRaum, lehrerId, true);
+        }
+
+        /// <summary>
         /// Processes the acceptance of returned items from the transfer storage to the main storage, marking the return as completed.
         /// </summary>
         /// <param name="bewegungId">The ID of the movement to be accepted.</param>

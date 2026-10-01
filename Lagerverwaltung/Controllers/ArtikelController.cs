@@ -110,11 +110,14 @@ namespace Lagerverwaltung.Controllers
                 return View(vm);
             }
 
-            //// Generate a new ID for the article by finding the maximum existing ID and adding 1, or using 1 if there are no articles
-            var neueId = (await _context.Artikels.MaxAsync(a => (int?)a.ID) ?? 0) + 1;
-            _context.Artikels.Add(new Artikel { ID = neueId, Name = vm.Name.Trim(), SerienNum = vm.SerienNum, Kategorie = vm.KategorieId!.Value });
-            await _lager.ZugangAsync(neueId, vm.Anfangsbestand, User.GetBenutzerId());
+            // Artikel zuerst speichern, damit die Datenbank die ID (IDENTITY) vergibt; Zugang in derselben Transaktion
+            await using var tx = await _context.Database.BeginTransactionAsync();
+            var artikel = new Artikel { Name = vm.Name.Trim(), SerienNum = vm.SerienNum, Kategorie = vm.KategorieId!.Value };
+            _context.Artikels.Add(artikel);
+            await _context.SaveChangesAsync();
+            await _lager.ZugangAsync(artikel.ID, vm.Anfangsbestand, User.GetBenutzerId());
             await _lager.SpeichernAsync();
+            await tx.CommitAsync();
 
             TempData["Meldung"] = $"{vm.Name} wurde erfasst und ins Hauptlager gebucht.";
             return RedirectToAction(nameof(Index));
