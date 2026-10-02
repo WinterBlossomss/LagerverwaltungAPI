@@ -1,0 +1,34 @@
+@model RaumDetailsViewModel
+@{
+    ViewData["Title"] = "Raum löschen";
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Raum löschen · verantwortlich @Model.Raum.BenutzerNavigation?.Username</div>
+        <h1 class="h2 mb-0">@Model.Raum.Anzeigename</h1>
+    </div>
+</div>
+
+@if (Model.KannGeloeschtWerden)
+{
+    <p>Soll dieser Raum wirklich gelöscht werden?</p>
+    <form asp-action="Delete" asp-route-id="@Model.Raum.ID" method="post" class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger">Löschen</button>
+        <a asp-action="Index" class="btn btn-outline-secondary">Abbrechen</a>
+    </form>
+}
+else
+{
+    <div class="alert alert-warning">
+        @if (Model.Positionen > 0)
+        {
+            <text>In diesem Raum liegen noch @Model.Positionen Position(en). Bitte zuerst zurückgeben.</text>
+        }
+        else
+        {
+            <text>Für diesen Raum gibt es Lagerbewegungen. Damit die Historie erhalten bleibt, kann er nicht gelöscht werden.</text>
+        }
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Zurück</a>
+}

@@ -17,6 +17,10 @@
 
     //returns active if user is in the InventarController
     string Aktiv(string c, string a = null) => controller == c && (a == null || action == a) ? "active" : "";
+
+    // master data pages, grouped in their own dropdown
+    var stammdaten = new[] { "Artikel", "Kategorie", "Hersteller", "Raum", "Benutzer" };
+    var stammdatenAktiv = stammdaten.Contains(controller) ? "active" : "";
 }
 <!DOCTYPE html>
 <html lang="de">
@@ -48,13 +52,18 @@
                 </button>
                 <div class="navbar-collapse collapse">
                     <ul class="navbar-nav me-auto">
-                        <button id="themeToggle" type="button" class="btn btn-sm btn-outline-secondary me-2" aria-label="Dunkelmodus umschalten">◐</button>
                         @if (isAdmin)
                         {
                             <li class="nav-item"><a class="nav-link @Aktiv("Dashboard")" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+
+                            @* Bestand *@
                             <li class="nav-item"><a class="nav-link @Aktiv("Inventar")" asp-controller="Inventar" asp-action="Index">Inventar</a></li>
                             <li class="nav-item"><a class="nav-link @Aktiv("Lager")" asp-controller="Lager" asp-action="Index">Lager</a></li>
                             <li class="nav-item"><a class="nav-link @Aktiv("Labor")" asp-controller="Labor" asp-action="Index">Labore</a></li>
+
+                            <li class="nav-item d-none d-lg-block"><div class="vr h-100 mx-2"></div></li>
+
+                            @* Vorgänge *@
                             <li class="nav-item"><a class="nav-link @Aktiv("Uebergabe")" asp-controller="Uebergabe" asp-action="Create">Ausgabe</a></li>
                             <li class="nav-item">
                                 <a class="nav-link @Aktiv("Umbuchung")" asp-controller="Umbuchung" asp-action="Index">
@@ -63,10 +72,23 @@
                                 </a>
                             </li>
                             <li class="nav-item"><a class="nav-link @Aktiv("Bewegungen")" asp-controller="Bewegungen" asp-action="Index">Bewegungen</a></li>
-                            <li class="nav-item"><a class="nav-link @Aktiv("Hersteller")" asp-controller="Hersteller" asp-action="Index">Hersteller</a></li>
-                            <li class="nav-item"><a class="nav-link @Aktiv("Kategorie")" asp-controller="Kategorie" asp-action="Index">Kategorien</a></li>
-                            <li class="nav-item"><a class="nav-link @Aktiv("Artikel")" asp-controller="Artikel" asp-action="Index">Artikel</a></li>
-                            <li class="nav-item"><a class="nav-link @Aktiv("Benutzer")" asp-controller="Benutzer" asp-action="Index">Benutzer</a></li>
+
+                            <li class="nav-item d-none d-lg-block"><div class="vr h-100 mx-2"></div></li>
+
+                            @* Stammdaten *@
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle @stammdatenAktiv" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Stammdaten</a>
+                                <ul class="dropdown-menu">
+                                    <li><h6 class="dropdown-header">Gegenstände</h6></li>
+                                    <li><a class="dropdown-item @Aktiv("Artikel")" asp-controller="Artikel" asp-action="Index">Artikel</a></li>
+                                    <li><a class="dropdown-item @Aktiv("Kategorie")" asp-controller="Kategorie" asp-action="Index">Kategorien</a></li>
+                                    <li><a class="dropdown-item @Aktiv("Hersteller")" asp-controller="Hersteller" asp-action="Index">Hersteller</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><h6 class="dropdown-header">Organisation</h6></li>
+                                    <li><a class="dropdown-item @Aktiv("Raum")" asp-controller="Raum" asp-action="Index">Räume</a></li>
+                                    <li><a class="dropdown-item @Aktiv("Benutzer")" asp-controller="Benutzer" asp-action="Index">Benutzer</a></li>
+                                </ul>
+                            </li>
                         }
                         else if (isLehrer)
                         {
@@ -81,8 +103,11 @@
                             <li class="nav-item"><a class="nav-link @Aktiv("Rueckgabe")" asp-controller="Rueckgabe" asp-action="Index">Rückgabe</a></li>
                         }
                     </ul>
-                    
-                    <partial name="_LoginPartial" />
+
+                    <div class="d-flex align-items-center gap-2">
+                        <button id="themeToggle" type="button" class="btn btn-sm btn-outline-secondary" aria-label="Dunkelmodus umschalten">◐</button>
+                        <partial name="_LoginPartial" />
+                    </div>
                 </div>
             </div>
         </nav>
