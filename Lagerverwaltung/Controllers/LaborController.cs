@@ -19,7 +19,12 @@ namespace Lagerverwaltung.Controllers
             _lager = lager;
         }
 
-        // GET: /Labor/Index/5?suche=...
+        /// <summary>
+        /// Displays the list of labs and their inventory based on the user's role and search criteria.
+        /// </summary>
+        /// <param name="id">The ID of the lab to display</param>
+        /// <param name="suche">The search term for filtering inventory</param>
+        /// <returns>The view with the lab information and inventory</returns>
         public async Task<IActionResult> Index(int? id, string suche)
         {
             // checks if user is admin and gets their ID
