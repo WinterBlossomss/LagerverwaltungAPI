@@ -72,6 +72,11 @@ namespace Lagerverwaltung.Controllers
         public IActionResult Create(string returnUrl = null) =>
             View(new HerstellerFormViewModel { ReturnUrl = returnUrl });
 
+        /// <summary>
+        /// Handle the submission of the manufacturer creation form. Validates the input and saves the new manufacturer to the database.
+        /// </summary>
+        /// <param name="vm">The view model containing the new manufacturer data.</param>
+        /// <returns>The view with the manufacturer creation form or a redirect to the index page.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(HerstellerFormViewModel vm)
