@@ -22,7 +22,7 @@ namespace Lagerverwaltung.ViewModels
         public string Labor { get; set; }
     }
 
-    public class BenutzerFormViewModel
+    public class BenutzerFormViewModel : IValidatableObject
     {
         public int ID { get; set; }
 
@@ -38,15 +38,26 @@ namespace Lagerverwaltung.ViewModels
         [Display(Name = "Labor")]
         public int? LaborId { get; set; }
 
-        [StringLength(100, MinimumLength = 3, ErrorMessage = "Mindestens 3 Zeichen.")]
+        [StringLength(100)]
         [DataType(DataType.Password)]
         [Display(Name = "Passwort")]
-        public string Password { get; set; }
+        public string? Password { get; set; }
 
         public bool IstNeu => ID == 0;
 
         public IEnumerable<SelectListItem> Rollen { get; set; } = [];
         public IEnumerable<SelectListItem> Labore { get; set; } = [];
+
+        public IEnumerable<ValidationResult> Validate(ValidationContext ctx)
+        {
+            if (IstNeu && string.IsNullOrWhiteSpace(Password))
+                yield return new ValidationResult(
+                    "Passwort ist erforderlich.", new[] { nameof(Password) });
+
+            if (!string.IsNullOrEmpty(Password) && Password.Length < 8)
+                yield return new ValidationResult(
+                    "Das Passwort muss mindestens 8 Zeichen lang sein.", new[] { nameof(Password) });
+        }
     }
 
     public class BenutzerDetailsViewModel

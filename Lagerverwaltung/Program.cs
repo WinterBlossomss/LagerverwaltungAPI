@@ -24,6 +24,8 @@ namespace Lagerverwaltung
                 options.LoginPath = "/Account/Login";
                 options.AccessDeniedPath = "/Account/AccessDenied";
             });
+            builder.Services.AddControllersWithViews(o =>
+            o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
 
             builder.Services.AddAuthorization();
 

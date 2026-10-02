@@ -25,13 +25,16 @@
     <div class="form-text">Pflicht für LehrerInnen. Ein Labor, das bereits vergeben ist, wird umgehängt.</div>
     <span asp-validation-for="LaborId" class="text-danger small"></span>
 </div>
-
+ 
 <div class="mb-3">
     <label asp-for="Password" class="form-label"></label>
-    <input asp-for="Password" class="form-control" autocomplete="new-password" />
-    @if (!Model.IstNeu)
+    @if (Model.IstNeu)
     {
-        <div class="form-text">Leer lassen, um das Passwort nicht zu ändern.</div>
+        <input asp-for="Password" class="form-control" autocomplete="new-password" required />
+    }
+    else
+    {
+        <input asp-for="Password" class="form-control" autocomplete="new-password" value="" />
     }
     <span asp-validation-for="Password" class="text-danger small"></span>
 </div>
