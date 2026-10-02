@@ -20,18 +20,24 @@
 }
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Lagerverwaltung</title>
     <script type="importmap"></script>
+    <script>
+            document.documentElement.setAttribute('data-bs-theme',
+                localStorage.getItem('theme') ??
+                (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+    </script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Lagerverwaltung.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow mb-4">
+        <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom box-shadow mb-4">
             <div class="container-fluid px-lg-4">
                 <a class="navbar-brand fw-bold" asp-controller="Dashboard" asp-action="Index">
                     Lagerverwaltung <small class="text-body-secondary fw-normal ms-1">BS EVITA</small>
@@ -42,6 +48,7 @@
                 </button>
                 <div class="navbar-collapse collapse">
                     <ul class="navbar-nav me-auto">
+                        <button id="themeToggle" type="button" class="btn btn-sm btn-outline-secondary me-2" aria-label="Dunkelmodus umschalten">◐</button>
                         @if (isAdmin)
                         {
                             <li class="nav-item"><a class="nav-link @Aktiv("Dashboard")" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
@@ -74,6 +81,7 @@
                             <li class="nav-item"><a class="nav-link @Aktiv("Rueckgabe")" asp-controller="Rueckgabe" asp-action="Index">Rückgabe</a></li>
                         }
                     </ul>
+                    
                     <partial name="_LoginPartial" />
                 </div>
             </div>
