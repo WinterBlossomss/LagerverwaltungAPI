@@ -7,8 +7,31 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Controllers - Copy\**" />
+    <Compile Remove="Data - Copy\**" />
+    <Compile Remove="DTOs - Copy\**" />
+    <Content Remove="Controllers - Copy\**" />
+    <Content Remove="Data - Copy\**" />
+    <Content Remove="DTOs - Copy\**" />
+    <EmbeddedResource Remove="Controllers - Copy\**" />
+    <EmbeddedResource Remove="Data - Copy\**" />
+    <EmbeddedResource Remove="DTOs - Copy\**" />
+    <None Remove="Controllers - Copy\**" />
+    <None Remove="Data - Copy\**" />
+    <None Remove="DTOs - Copy\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.15" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="efpt.config.json.user" />
   </ItemGroup>
 
 </Project>

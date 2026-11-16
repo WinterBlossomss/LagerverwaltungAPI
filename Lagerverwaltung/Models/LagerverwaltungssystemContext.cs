@@ -8,14 +8,12 @@ namespace Lagerverwaltung.Models;
 
 public partial class LagerverwaltungssystemContext : DbContext
 {
-    public LagerverwaltungssystemContext()
-    {
-    }
-
     public LagerverwaltungssystemContext(DbContextOptions<LagerverwaltungssystemContext> options)
         : base(options)
     {
     }
+
+    public virtual DbSet<ApiTable> ApiTables { get; set; }
 
     public virtual DbSet<Artikel> Artikels { get; set; }
 
@@ -37,12 +35,13 @@ public partial class LagerverwaltungssystemContext : DbContext
 
     public virtual DbSet<Rolle> Rolles { get; set; }
 
-//    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=Lagerverwaltungssystem;Integrated Security=True;Encrypt=True;Trust Server Certificate=True");
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<ApiTable>(entity =>
+        {
+            entity.HasKey(e => e.TokenId).HasName("PK_ApiTokens");
+        });
+
         modelBuilder.Entity<Artikel>(entity =>
         {
             entity.HasOne(d => d.HerstellerNavigation).WithMany(p => p.Artikels).HasConstraintName("FK_Artikel_Hersteller");
