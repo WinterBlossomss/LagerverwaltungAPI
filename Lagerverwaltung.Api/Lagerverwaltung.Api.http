@@ -1,0 +1,6 @@
+@Lagerverwaltung.Api_HostAddress = http://localhost:5148
+
+GET {{Lagerverwaltung.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

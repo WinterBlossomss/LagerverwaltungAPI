@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="Lagerverwaltung.Api/Lagerverwaltung.Api.csproj" Id="12ef85da-d4b0-48cc-84b4-a9090d73497a" />
   <Project Path="Lagerverwaltung/Lagerverwaltung.csproj" />
 </Solution>
