@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Data.SqlClient;
 
@@ -18,8 +18,13 @@ namespace Lagerverwaltung.Api.Helpers
     public class SqlExceptionFilter : IExceptionFilter
     {
         private readonly ILogger<SqlExceptionFilter> _logger;
+        private readonly IHostEnvironment _environment;
 
-        public SqlExceptionFilter(ILogger<SqlExceptionFilter> logger) => _logger = logger;
+        public SqlExceptionFilter(ILogger<SqlExceptionFilter> logger, IHostEnvironment environment)
+        {
+            _logger = logger;
+            _environment = environment;
+        }
 
         public void OnException(ExceptionContext context)
         {
@@ -33,7 +38,13 @@ namespace Lagerverwaltung.Api.Helpers
             else
             {
                 _logger.LogError(ex, "Unexpected database error {Number}", ex.Number);
-                context.Result = new ObjectResult(new { error = "Interner Datenbankfehler." }) { StatusCode = 500 };
+
+                // Only on the developer's machine (Development) the SQL details are shown, to make
+                // debugging easier. In Production the client only gets the generic message.
+                object body = _environment.IsDevelopment()
+                    ? new { error = "Interner Datenbankfehler.", sqlNumber = ex.Number, sqlMessage = ex.Message, procedure = ex.Procedure }
+                    : new { error = "Interner Datenbankfehler." };
+                context.Result = new ObjectResult(body) { StatusCode = 500 };
             }
             context.ExceptionHandled = true;
         }
