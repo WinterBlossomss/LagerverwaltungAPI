@@ -1,0 +1,33 @@
+﻿@model BenutzerDetailsViewModel
+@{
+    ViewData["Title"] = "Benutzer löschen";
+    var b = Model.Benutzer;
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Benutzer löschen</div>
+        <h1 class="h2 mb-0">@b.Username</h1>
+    </div>
+</div>
+
+<dl class="row mb-4">
+    <dt class="col-sm-3">Rolle</dt><dd class="col-sm-9">@b.RolleNavigation?.Name</dd>
+    <dt class="col-sm-3">Labor</dt><dd class="col-sm-9">@Model.Labor</dd>
+</dl>
+
+@if (Model.KannGeloeschtWerden)
+{
+    <p>Soll dieser Benutzer wirklich gelöscht werden?</p>
+    <form asp-action="Delete" asp-route-id="@b.ID" method="post" class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger">Löschen</button>
+        <a asp-action="Details" asp-route-id="@b.ID" class="btn btn-outline-secondary">Abbrechen</a>
+    </form>
+}
+else
+{
+    <div class="alert alert-warning">
+        Dieser Benutzer hat noch offene Aufgaben oder ist in anderen Datensätzen referenziert. Damit die Historie nachvollziehbar bleibt, kann er nicht gelöscht werden.
+    </div>
+    <a asp-action="Details" asp-route-id="@b.ID" class="btn btn-outline-secondary">Zurück</a>
+}

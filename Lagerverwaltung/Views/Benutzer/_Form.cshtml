@@ -1,0 +1,40 @@
+﻿@model BenutzerFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+<input type="hidden" asp-for="ID" />
+
+<div class="mb-3">
+    <label asp-for="Username" class="form-label"></label>
+    <input asp-for="Username" class="form-control" autocomplete="off" />
+    <span asp-validation-for="Username" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Rolle" class="form-label"></label>
+    <select asp-for="Rolle" asp-items="Model.Rollen" class="form-select">
+        <option value="">– Rolle wählen –</option>
+    </select>
+    <span asp-validation-for="Rolle" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="LaborId" class="form-label"></label>
+    <select asp-for="LaborId" asp-items="Model.Labore" class="form-select">
+        <option value="">– kein Labor –</option>
+    </select>
+    <div class="form-text">Pflicht für LehrerInnen. Ein Labor, das bereits vergeben ist, wird umgehängt.</div>
+    <span asp-validation-for="LaborId" class="text-danger small"></span>
+</div>
+ 
+<div class="mb-3">
+    <label asp-for="Password" class="form-label"></label>
+    @if (Model.IstNeu)
+    {
+        <input asp-for="Password" class="form-control" autocomplete="new-password" required />
+    }
+    else
+    {
+        <input asp-for="Password" class="form-control" autocomplete="new-password" value="" />
+    }
+    <span asp-validation-for="Password" class="text-danger small"></span>
+</div>

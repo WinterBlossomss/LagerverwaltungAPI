@@ -1,0 +1,94 @@
+﻿@model AusgabeViewModel
+@{
+    ViewData["Title"] = "Ausgabe";
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Übergabe · Schritt 1 von 2</div>
+        <h1 class="h2 mb-0">Ausgabe aus dem Hauptlager</h1>
+    </div>
+    <form method="get" asp-action="Create" class="d-flex gap-2">
+        <input type="hidden" name="raumId" value="@Model.ZielRaumId" />
+        <input name="suche" value="@Model.Suche" class="form-control" placeholder="Artikel suchen" />
+        <button type="submit" class="btn btn-outline-secondary">Suchen</button>
+    </form>
+</div>
+
+<form asp-action="Create" method="post">
+    <input type="hidden" asp-for="Suche" />
+    <div asp-validation-summary="All" class="alert alert-danger" style="display:@(ViewData.ModelState.IsValid ? "none" : "block")"></div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <h2 class="h5 mb-2">Verfügbar im Hauptlager</h2>
+            @if (!Model.Positionen.Any())
+            {
+                <p class="text-body-secondary border-top pt-3">Keine passenden Gegenstände im Hauptlager.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th style="width:2.5rem"></th>
+                                <th>Bezeichnung</th>
+                                <th>Seriennummer</th>
+                                <th class="text-end">Verfügbar</th>
+                                <th style="width:8rem">Menge</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (var i = 0; i < Model.Positionen.Count; i++)
+                            {
+                                var p = Model.Positionen[i];
+                                <tr>
+                                    <td>
+                                        <input type="hidden" asp-for="Positionen[i].ArtikelId" />
+                                        <input class="form-check-input" type="checkbox" asp-for="Positionen[i].Ausgewaehlt" id="pos-@i" />
+                                    </td>
+                                    <td>
+                                        <label for="pos-@i" class="fw-semibold">@p.Name</label>
+                                        <div class="small text-body-secondary">@p.Kategorie</div>
+                                    </td>
+                                    <td>@(p.SerienNum?.ToString() ?? "ohne")</td>
+                                    <td class="text-end">@p.Verfuegbar</td>
+                                    <td>
+                                        @if (p.SerienNum == null)
+                                        {
+                                            <input class="form-control form-control-sm" type="number" min="1" max="@p.Verfuegbar" asp-for="Positionen[i].Menge" />
+                                        }
+                                        else
+                                        {
+                                            <input type="hidden" asp-for="Positionen[i].Menge" />
+                                            <span class="small text-body-secondary">Einzelgerät</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="col-lg-4">
+            <div class="summary-panel">
+                <h2 class="h5">Übergabe an</h2>
+                <div class="mb-3">
+                    <label asp-for="ZielRaumId" class="form-label small"></label>
+                    <select asp-for="ZielRaumId" asp-items="Model.Labore" class="form-select">
+                        <option value="">Labor wählen …</option>
+                    </select>
+                    <span asp-validation-for="ZielRaumId" class="text-danger small"></span>
+                </div>
+                <p class="small text-body-secondary">
+                    Die ausgewählten Gegenstände werden aus dem Hauptlager ausgebucht und als offene Übergabe markiert.
+                    Erst wenn die verantwortliche LehrerIn die Übernahme digital bestätigt, erscheinen sie im Laborinventar.
+                </p>
+                <button type="submit" class="btn btn-primary w-100">Übergabe erstellen</button>
+            </div>
+        </div>
+    </div>
+</form>

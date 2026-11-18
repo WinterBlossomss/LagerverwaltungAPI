@@ -1,0 +1,22 @@
+﻿<ul class="navbar-nav ms-auto align-items-lg-center">
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <li class="nav-item">
+            <span class="navbar-text me-3 lh-sm d-inline-block">
+                <span class="fw-semibold text-body">@User.Identity.Name</span><br />
+                <small>@(User.IsInRole("Administrator") ? "Administrator" : "LehrerIn")</small>
+            </span>
+        </li>
+        <li class="nav-item">
+            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Abmelden</button>
+            </form>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Anmelden</a>
+        </li>
+    }
+</ul>

@@ -1,0 +1,56 @@
+@model KategorieListeViewModel
+@{
+    ViewData["Title"] = "Kategorien";
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Stammdaten</div>
+        <h1 class="h2 mb-0">Kategorien</h1>
+    </div>
+    <a class="btn btn-primary" asp-action="Create">Kategorie anlegen</a>
+</div>
+
+<form method="get" asp-action="Index" class="row g-3 align-items-end mb-3">
+    <div class="col-8 col-md-6">
+        <label asp-for="Suche" class="form-label small">Suche</label>
+        <input asp-for="Suche" class="form-control" placeholder="Name oder Modellnummer" />
+    </div>
+    <div class="col-4 col-md-2">
+        <button type="submit" class="btn btn-secondary w-100">Filtern</button>
+    </div>
+</form>
+
+@if (!Model.Kategorien.Any())
+{
+    <p class="text-body-secondary border-top pt-3">Keine Kategorien gefunden.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Modellnummer</th>
+                    <th class="text-end">Artikel</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var k in Model.Kategorien)
+                {
+                    <tr>
+                        <td class="fw-semibold">@k.Name</td>
+                        <td>@(k.ModelNum?.ToString() ?? "—")</td>
+                        <td class="text-end">@k.AnzahlArtikel</td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Details" asp-route-id="@k.ID" class="btn btn-sm btn-outline-secondary">Details</a>
+                            <a asp-action="Edit" asp-route-id="@k.ID" class="btn btn-sm btn-outline-secondary">Bearbeiten</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

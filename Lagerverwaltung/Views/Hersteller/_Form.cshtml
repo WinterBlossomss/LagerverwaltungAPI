@@ -1,0 +1,11 @@
+﻿@model HerstellerFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+<input type="hidden" asp-for="ID" />
+<input type="hidden" asp-for="ReturnUrl" />
+
+<div class="mb-3">
+    <label asp-for="Name" class="form-label"></label>
+    <input asp-for="Name" class="form-control" placeholder="z. B. Dell" />
+    <span asp-validation-for="Name" class="text-danger small"></span>
+</div>

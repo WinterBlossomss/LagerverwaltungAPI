@@ -1,0 +1,129 @@
+﻿/* Login – angelehnt an das Mockup */
+.login {
+    --login-accent: #ec3013;
+    --login-accent-hover: #dd2b0f;
+    --login-divider: #d9d6d6;
+}
+
+.login-main {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 3rem;
+    padding: 3.5rem 4rem;
+    border-right: 2px solid var(--login-divider);
+}
+
+.login-brand {
+    font-weight: 800;
+    font-size: 1.125rem;
+}
+
+.login-brand-sub {
+    font-weight: 400;
+    font-size: .75rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--bs-secondary-color);
+    margin-left: .375rem;
+}
+
+.login-form {
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-title {
+    font-weight: 800;
+    font-size: 2.25rem;
+    margin-bottom: .375rem;
+}
+
+.login-rule {
+    border: 0;
+    border-top: 2px solid var(--login-divider);
+    opacity: 1;
+    margin: 1.25rem 0;
+}
+
+.login .form-label {
+    font-size: .875rem;
+    font-weight: 600;
+    margin-bottom: .375rem;
+}
+
+.login .form-control {
+    border-radius: 0;
+    padding: .625rem .75rem;
+}
+
+    .login .form-control:focus {
+        border-color: var(--login-accent);
+        box-shadow: 0 0 0 .2rem rgba(236, 48, 19, .2);
+    }
+
+.login .form-check-input {
+    border-radius: 0;
+}
+
+    .login .form-check-input:checked {
+        background-color: var(--login-accent);
+        border-color: var(--login-accent);
+    }
+
+.login-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .75rem .875rem;
+    border-radius: 0;
+    background: var(--login-accent);
+    border: 0;
+    color: #fff;
+    font-weight: 600;
+}
+
+    .login-btn:hover, .login-btn:focus, .login-btn:active {
+        background: var(--login-accent-hover) !important;
+        color: #fff !important;
+    }
+
+.login-accent {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 1.5rem;
+    padding: 3.5rem 4rem;
+    background: var(--login-accent);
+    color: #fff;
+}
+
+.login-accent-kicker {
+    font-size: .6875rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.login-accent-title {
+    font-weight: 800;
+    font-size: clamp(2.5rem, 5vw, 4.25rem);
+    line-height: 1.02;
+    letter-spacing: -.02em;
+    text-wrap: balance;
+}
+
+@media (max-width: 991.98px) {
+    .login-main {
+        border-right: 0;
+        padding: 2rem 1.5rem;
+    }
+
+    .login-accent {
+        padding: 2rem 1.5rem;
+        order: -1;
+    }
+
+    .login-accent-title {
+        font-size: 2rem;
+    }
+}

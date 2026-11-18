@@ -1,0 +1,101 @@
+﻿@model InventarViewModel
+@{
+    ViewData["Title"] = "Inventar";
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Alle Lager und Labore</div>
+        <h1 class="h2 mb-0">Inventar</h1>
+    </div>
+    <a class="btn btn-primary" asp-controller="Artikel" asp-action="Create">Artikel erfassen</a>
+</div>
+
+<form method="get" asp-action="Index" class="row g-3 align-items-end mb-3">
+    <div class="col-12 col-lg-4">
+        <label asp-for="Suche" class="form-label small">Suche</label>
+        <input asp-for="Suche" class="form-control" placeholder="Bezeichnung oder Seriennummer" />
+    </div>
+    <div class="col-6 col-lg-2">
+        <label asp-for="KategorieId" class="form-label small">Kategorie</label>
+        <select asp-for="KategorieId" asp-items="Model.Kategorien" class="form-select">
+            <option value="">Alle</option>
+        </select>
+    </div>
+    <div class="col-6 col-lg-2">
+        <label asp-for="RaumId" class="form-label small">Lager / Labor</label>
+        <select asp-for="RaumId" asp-items="Model.Raeume" class="form-select">
+            <option value="">Alle</option>
+        </select>
+    </div>
+    <div class="col-6 col-lg-2">
+        <label asp-for="LehrerId" class="form-label small">Verantwortlich</label>
+        <select asp-for="LehrerId" asp-items="Model.Lehrer" class="form-select">
+            <option value="">Alle</option>
+        </select>
+    </div>
+    <div class="col-6 col-lg-2">
+        <label asp-for="Seriennummer" class="form-label small">Seriennummer</label>
+        <select asp-for="Seriennummer" class="form-select">
+            <option value="alle">Alle</option>
+            <option value="mit">Mit Seriennummer</option>
+            <option value="ohne">Ohne Seriennummer</option>
+        </select>
+    </div>
+    <div class="col-12 d-flex gap-2 align-items-center">
+        <button type="submit" class="btn btn-secondary">Filtern</button>
+        @if (Model.HatFilter)
+        {
+            <a asp-action="Index" class="btn btn-link">Filter zurücksetzen</a>
+        }
+        <span class="ms-auto small text-body-secondary">@Model.Zeilen.Count von @Model.GesamtPositionen Positionen</span>
+    </div>
+</form>
+
+@if (!Model.Zeilen.Any())
+{
+    <p class="text-body-secondary border-top pt-3">Keine Gegenstände für diese Filter.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Bezeichnung</th>
+                    <th>Kategorie</th>
+                    <th>Hersteller</th>
+                    <th>Seriennummer</th>
+                    <th>Standort</th>
+                    <th>Verantwortlich</th>
+                    <th class="text-end">Menge</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var z in Model.Zeilen)
+                {
+                    <tr>
+                        <td><a asp-controller="Artikel" asp-action="Details" asp-route-id="@z.ArtikelId" class="fw-semibold link-body-emphasis text-decoration-none">@z.Name</a></td>
+                        <td>@z.Kategorie</td>
+                        <td>@(z.Hersteller ?? "—")</td>
+                        <td>@(z.SerienNum?.ToString() ?? "—")</td>
+                        <td>@z.Standort</td>
+                        <td>@(z.Verantwortlich ?? "—")</td>
+                        <td class="text-end">@z.Menge</td>
+                        @{
+                            var badge = z.Status switch
+                            {
+                                "Verfügbar" => "text-bg-success",
+                                "Übergabe offen" => "text-bg-warning",
+                                "Umbuchungslager" => "text-bg-info",
+                                _ => "text-bg-light border"
+                            };
+                        }
+                        <td><span class="badge @badge">@z.Status</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

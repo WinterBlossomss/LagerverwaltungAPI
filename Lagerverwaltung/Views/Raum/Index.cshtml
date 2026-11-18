@@ -1,0 +1,57 @@
+@model RaumListeViewModel
+@{
+    ViewData["Title"] = "Räume";
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Stammdaten</div>
+        <h1 class="h2 mb-0">Räume</h1>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-secondary" asp-controller="Labor" asp-action="Index">Labore</a>
+        <a class="btn btn-primary" asp-action="Create">Raum anlegen</a>
+    </div>
+</div>
+
+<form method="get" asp-action="Index" class="d-flex gap-2 mb-3" style="max-width: 32rem;">
+    <input name="suche" value="@Model.Suche" class="form-control" placeholder="Raumnummer oder LehrerIn suchen" />
+    <button type="submit" class="btn btn-secondary">Suchen</button>
+</form>
+
+@if (!Model.Raeume.Any())
+{
+    <p class="text-body-secondary border-top pt-3">Keine Räume gefunden.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Raum</th>
+                    <th>Verantwortlich</th>
+                    <th class="text-end">Positionen</th>
+                    <th class="text-end">Stück</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.Raeume)
+                {
+                    <tr>
+                        <td class="fw-semibold">Raum @r.RaumNum</td>
+                        <td>@r.Verantwortlich</td>
+                        <td class="text-end">@r.Positionen</td>
+                        <td class="text-end">@r.Stueck</td>
+                        <td class="text-end text-nowrap">
+                            <a asp-controller="Labor" asp-action="Index" asp-route-id="@r.ID" class="btn btn-sm btn-outline-secondary">Inventar</a>
+                            <a asp-action="Edit" asp-route-id="@r.ID" class="btn btn-sm btn-outline-secondary">Bearbeiten</a>
+                            <a asp-action="Delete" asp-route-id="@r.ID" class="btn btn-sm btn-outline-danger">Löschen</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

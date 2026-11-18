@@ -1,0 +1,25 @@
+﻿@model Lagerbewegungen
+@{
+    var art = Model.BewegungNavigation?.Name;
+    var erledigt = Model.IsDone == true;
+}
+@if (!erledigt && art == BewegungArten.Ausgabe)
+{
+    <span class="badge text-bg-warning">Wartet auf Bestätigung</span>
+}
+else if (!erledigt && art == BewegungArten.Rueckgabe)
+{
+    <span class="badge text-bg-warning">Offen</span>
+}
+else if (art == BewegungArten.Rueckgabe)
+{
+    <span class="badge text-bg-info">Entgegengenommen</span>
+}
+else if (art == BewegungArten.Ausgabe)
+{
+    <span class="badge text-bg-success">Bestätigt</span>
+}
+else
+{
+    <span class="badge text-bg-light border">Abgeschlossen</span>
+}

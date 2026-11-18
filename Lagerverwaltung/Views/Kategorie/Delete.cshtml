@@ -1,0 +1,28 @@
+@model KategorieDetailsViewModel
+@{
+    ViewData["Title"] = "Kategorie löschen";
+    var k = Model.Kategorie;
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Kategorie löschen</div>
+        <h1 class="h2 mb-0">@k.Name</h1>
+    </div>
+</div>
+
+@if (Model.KannGeloeschtWerden)
+{
+    <p>Soll diese Kategorie wirklich gelöscht werden?</p>
+    <form asp-action="Delete" asp-route-id="@k.ID" method="post" class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger">Löschen</button>
+        <a asp-action="Details" asp-route-id="@k.ID" class="btn btn-outline-secondary">Abbrechen</a>
+    </form>
+}
+else
+{
+    <div class="alert alert-warning">
+        Diese Kategorie enthält noch @Model.Artikel.Count Artikel und kann nicht gelöscht werden.
+    </div>
+    <a asp-action="Details" asp-route-id="@k.ID" class="btn btn-outline-secondary">Zurück</a>
+}

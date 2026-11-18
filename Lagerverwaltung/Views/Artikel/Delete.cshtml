@@ -1,0 +1,35 @@
+@model ArtikelDetailsViewModel
+@{
+    ViewData["Title"] = "Artikel löschen";
+    var a = Model.Artikel;
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Artikel löschen</div>
+        <h1 class="h2 mb-0">@a.Name</h1>
+    </div>
+</div>
+
+<dl class="row mb-4">
+    <dt class="col-sm-3">Kategorie</dt><dd class="col-sm-9">@a.KategorieNavigation?.Name</dd>
+    <dt class="col-sm-3">Seriennummer</dt><dd class="col-sm-9">@(a.SerienNum?.ToString() ?? "—")</dd>
+    <dt class="col-sm-3">Bestand gesamt</dt><dd class="col-sm-9">@Model.Standorte.Sum(s => s.Menge)</dd>
+    <dt class="col-sm-3">Lagerbewegungen</dt><dd class="col-sm-9">@Model.Bewegungen.Count</dd>
+</dl>
+
+@if (Model.KannGeloeschtWerden)
+{
+    <p>Soll dieser Artikel wirklich gelöscht werden?</p>
+    <form asp-action="Delete" asp-route-id="@a.ID" method="post" class="d-flex gap-2">
+        <button type="submit" class="btn btn-danger">Löschen</button>
+        <a asp-action="Details" asp-route-id="@a.ID" class="btn btn-outline-secondary">Abbrechen</a>
+    </form>
+}
+else
+{
+    <div class="alert alert-warning">
+        Dieser Artikel hat Bestand oder Lagerbewegungen. Damit die Historie nachvollziehbar bleibt, kann er nicht gelöscht werden.
+    </div>
+    <a asp-action="Details" asp-route-id="@a.ID" class="btn btn-outline-secondary">Zurück</a>
+}

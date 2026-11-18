@@ -1,0 +1,24 @@
+﻿@model BenutzerDetailsViewModel
+@{
+    ViewData["Title"] = Model.Benutzer.Username;
+    var b = Model.Benutzer;
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Benutzer</div>
+        <h1 class="h2 mb-0">@b.Username</h1>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@b.ID" class="btn btn-outline-secondary">Bearbeiten</a>
+        <a asp-action="Delete" asp-route-id="@b.ID" class="btn btn-outline-danger">Löschen</a>
+    </div>
+</div>
+
+<div class="row g-0 stat-row mb-4">
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Rolle</div><div class="stat-value fs-3">@b.RolleNavigation?.Name</div></div>
+<div class="col-6 col-lg-3 stat"><div class="stat-label">Labor</div><div class="stat-value fs-3">@Model.Labor</div></div>
+</div>
+
+<h2 class="h5 mb-2">Bewegungen</h2>
+<partial name="_BewegungTabelle" model="Model.Bewegungen" />

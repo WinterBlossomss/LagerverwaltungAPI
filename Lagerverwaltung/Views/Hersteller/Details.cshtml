@@ -1,0 +1,44 @@
+﻿@model HerstellerDetailsViewModel
+@{
+    ViewData["Title"] = Model.Hersteller.Name;
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">Hersteller</div>
+        <h1 class="h2 mb-0">@Model.Hersteller.Name</h1>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.Hersteller.ID" class="btn btn-outline-secondary">Bearbeiten</a>
+        <a asp-action="Delete" asp-route-id="@Model.Hersteller.ID" class="btn btn-outline-danger">Löschen</a>
+    </div>
+</div>
+
+<div class="row g-0 stat-row mb-4">
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Artikel</div><div class="stat-value">@Model.Artikel.Count</div></div>
+</div>
+
+<h2 class="h5 mb-2">Artikel</h2>
+@if (!Model.Artikel.Any())
+{
+    <p class="text-body-secondary border-top pt-3">Noch keine Artikel von diesem Hersteller.</p>
+}
+else
+{
+    <table class="table align-middle">
+        <thead><tr><th>Bezeichnung</th><th>Kategorie</th><th>Seriennummer</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var a in Model.Artikel)
+            {
+                <tr>
+                    <td class="fw-semibold">@a.Name</td>
+                    <td>@a.KategorieNavigation?.Name</td>
+                    <td>@(a.SerienNum?.ToString() ?? "—")</td>
+                    <td class="text-end"><a asp-controller="Artikel" asp-action="Details" asp-route-id="@a.ID" class="btn btn-sm btn-outline-secondary">Details</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<a asp-action="Index" class="btn btn-link px-0">Zurück zur Liste</a>

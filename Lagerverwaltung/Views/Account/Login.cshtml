@@ -1,0 +1,64 @@
+﻿@using Lagerverwaltung.ViewModels
+@model LoginViewModel
+
+@{
+    ViewData["Title"] = "Anmelden";
+    Layout = "~/Views/Shared/_AccountLayout.cshtml";
+}
+
+<div class="login row g-0 min-vh-100">
+    <div class="col-lg-6 login-main">
+        <div class="login-brand">
+            Lagerverwaltung <span class="login-brand-sub">BS EVITA</span>
+        </div>
+
+        <div class="login-form">
+            <h1 class="login-title">Anmelden</h1>
+            <p class="text-body-secondary mb-0">Bitte melden Sie sich an.</p>
+            <hr class="login-rule" />
+
+            <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Username" class="form-label"></label>
+                    <input asp-for="Username" class="form-control" autocomplete="username" autofocus />
+                    <span asp-validation-for="Username" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Password" class="form-label"></label>
+                    <input asp-for="Password" class="form-control" autocomplete="current-password" />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input asp-for="RememberMe" class="form-check-input" />
+                    <label asp-for="RememberMe" class="form-check-label small"></label>
+                </div>
+
+                <button type="submit" class="btn login-btn w-100">
+                    <span>Anmelden</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>
+                </button>
+            </form>
+
+            <p class="small text-body-secondary mt-4 mb-0">
+                Kein Zugang oder Passwort vergessen? Benutzer werden vom Administrator angelegt.
+            </p>
+        </div>
+
+        <div class="small text-body-secondary">&copy; @DateTime.Now.Year Lagerverwaltung</div>
+    </div>
+
+    <div class="col-lg-6 login-accent">
+        <div class="login-accent-kicker">Lager- und Inventarverwaltung der Labore</div>
+        <div class="login-accent-title">Hauptlager → Labor → Umbuchungslager → Hauptlager.</div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial.cshtml");
+    }
+}

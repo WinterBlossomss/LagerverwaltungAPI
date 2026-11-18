@@ -1,0 +1,48 @@
+@model ArtikelDetailsViewModel
+@{
+    ViewData["Title"] = Model.Artikel.Name;
+    var a = Model.Artikel;
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-kicker">@a.KategorieNavigation?.Name</div>
+        <h1 class="h2 mb-0">@a.Name</h1>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@a.ID" class="btn btn-outline-secondary">Bearbeiten</a>
+        <a asp-action="Delete" asp-route-id="@a.ID" class="btn btn-outline-danger">Löschen</a>
+    </div>
+</div>
+
+<div class="row g-0 stat-row mb-4">
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Seriennummer</div><div class="stat-value fs-3">@(a.SerienNum?.ToString() ?? "—")</div></div>
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Hersteller</div><div class="stat-value fs-3">@(a.HerstellerNavigation?.Name ?? "—")</div></div>
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Bestand gesamt</div><div class="stat-value fs-3">@Model.Standorte.Sum(s => s.Menge)</div></div>
+    <div class="col-6 col-lg-3 stat"><div class="stat-label">Standorte</div><div class="stat-value fs-3">@Model.Standorte.Count</div></div>
+</div>
+
+<h2 class="h5 mb-2">Aktueller Standort</h2>
+@if (!Model.Standorte.Any())
+{
+    <p class="text-body-secondary border-top pt-3 mb-5">Kein Bestand (evtl. in einer offenen Übergabe).</p>
+}
+else
+{
+    <table class="table align-middle mb-5">
+        <thead><tr><th>Standort</th><th>Verantwortlich</th><th class="text-end">Menge</th></tr></thead>
+        <tbody>
+            @foreach (var s in Model.Standorte)
+            {
+                <tr>
+                    <td>@s.RaumNavigation.Anzeigename</td>
+                    <td>@s.RaumNavigation.BenutzerNavigation?.Username</td>
+                    <td class="text-end">@s.Menge</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<h2 class="h5 mb-2">Lagerbewegungen</h2>
+<partial name="_BewegungTabelle" model="Model.Bewegungen" />

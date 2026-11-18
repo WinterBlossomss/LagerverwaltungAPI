@@ -1,45 +1,140 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@inject LagerService Lager
+@{
+
+    // checks what role the user has, determines what menu is shown
+    var isAdmin = User.IsInRole(Rollen.Admin);
+    var isLehrer = User.IsInRole(Rollen.Lehrer);
+
+    //they give the name of the curren controller and action
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+
+    // total number of open returns
+    var anzahlRueckgaben = isAdmin ? await Lager.AnzahlOffeneRueckgabenAsync() : 0;
+
+    // total number of open handovers
+    var anzahlUebergaben = isLehrer ? await Lager.AnzahlOffeneUebergabenAsync(User.GetBenutzerId()) : 0;
+
+    //returns active if user is in the InventarController
+    string Aktiv(string c, string a = null) => controller == c && (a == null || action == a) ? "active" : "";
+
+    // master data pages, grouped in their own dropdown
+    var stammdaten = new[] { "Artikel", "Kategorie", "Hersteller", "Raum", "Benutzer" };
+    var stammdatenAktiv = stammdaten.Contains(controller) ? "active" : "";
+}
+<!DOCTYPE html>
+<html lang="de">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Lagerverwaltung</title>
     <script type="importmap"></script>
+    <script>
+            document.documentElement.setAttribute('data-bs-theme',
+                localStorage.getItem('theme') ??
+                (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+    </script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Lagerverwaltung.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Lagerverwaltung</a>
+        <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom box-shadow mb-4">
+            <div class="container-fluid px-lg-4">
+                <a class="navbar-brand fw-bold" asp-controller="Dashboard" asp-action="Index">
+                    Lagerverwaltung <small class="text-body-secondary fw-normal ms-1">BS EVITA</small>
+                </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                        aria-expanded="false" aria-label="Navigation umschalten">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
+                <div class="navbar-collapse collapse">
+                    <ul class="navbar-nav me-auto">
+                        @if (isAdmin)
+                        {
+                            <li class="nav-item"><a class="nav-link @Aktiv("Dashboard")" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+
+                            @* Bestand *@
+                            <li class="nav-item"><a class="nav-link @Aktiv("Inventar")" asp-controller="Inventar" asp-action="Index">Inventar</a></li>
+                            <li class="nav-item"><a class="nav-link @Aktiv("Lager")" asp-controller="Lager" asp-action="Index">Lager</a></li>
+                            <li class="nav-item"><a class="nav-link @Aktiv("Labor")" asp-controller="Labor" asp-action="Index">Labore</a></li>
+
+                            <li class="nav-item d-none d-lg-block"><div class="vr h-100 mx-2"></div></li>
+
+                            @* Vorgänge *@
+                            <li class="nav-item"><a class="nav-link @Aktiv("Uebergabe")" asp-controller="Uebergabe" asp-action="Create">Ausgabe</a></li>
+                            <li class="nav-item">
+                                <a class="nav-link @Aktiv("Umbuchung")" asp-controller="Umbuchung" asp-action="Index">
+                                    Umbuchungslager
+                                    @if (anzahlRueckgaben > 0) { <span class="badge text-bg-danger ms-1">@anzahlRueckgaben</span> }
+                                </a>
+                            </li>
+                            <li class="nav-item"><a class="nav-link @Aktiv("Bewegungen")" asp-controller="Bewegungen" asp-action="Index">Bewegungen</a></li>
+
+                            <li class="nav-item d-none d-lg-block"><div class="vr h-100 mx-2"></div></li>
+
+                            @* Stammdaten *@
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle @stammdatenAktiv" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Stammdaten</a>
+                                <ul class="dropdown-menu">
+                                    <li><h6 class="dropdown-header">Gegenstände</h6></li>
+                                    <li><a class="dropdown-item @Aktiv("Artikel")" asp-controller="Artikel" asp-action="Index">Artikel</a></li>
+                                    <li><a class="dropdown-item @Aktiv("Kategorie")" asp-controller="Kategorie" asp-action="Index">Kategorien</a></li>
+                                    <li><a class="dropdown-item @Aktiv("Hersteller")" asp-controller="Hersteller" asp-action="Index">Hersteller</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><h6 class="dropdown-header">Organisation</h6></li>
+                                    <li><a class="dropdown-item @Aktiv("Raum")" asp-controller="Raum" asp-action="Index">Räume</a></li>
+                                    <li><a class="dropdown-item @Aktiv("Benutzer")" asp-controller="Benutzer" asp-action="Index">Benutzer</a></li>
+                                </ul>
+                            </li>
+                        }
+                        else if (isLehrer)
+                        {
+                            <li class="nav-item"><a class="nav-link @Aktiv("Dashboard")" asp-controller="Dashboard" asp-action="Index">Dashboard</a></li>
+                            <li class="nav-item"><a class="nav-link @Aktiv("Labor")" asp-controller="Labor" asp-action="Index">Mein Labor</a></li>
+                            <li class="nav-item">
+                                <a class="nav-link @Aktiv("Uebergabe")" asp-controller="Uebergabe" asp-action="Index">
+                                    Übergaben
+                                    @if (anzahlUebergaben > 0) { <span class="badge text-bg-danger ms-1">@anzahlUebergaben</span> }
+                                </a>
+                            </li>
+                            <li class="nav-item"><a class="nav-link @Aktiv("Rueckgabe")" asp-controller="Rueckgabe" asp-action="Index">Rückgabe</a></li>
+                        }
                     </ul>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <button id="themeToggle" type="button" class="btn btn-sm btn-outline-secondary" aria-label="Dunkelmodus umschalten">◐</button>
+                        <partial name="_LoginPartial" />
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+    <div class="container-xl">
+        <main role="main" class="pb-5">
+            @if (TempData["Meldung"] is string meldung)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @meldung
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Schließen"></button>
+                </div>
+            }
+            @if (TempData["Fehler"] is string fehler)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @fehler
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Schließen"></button>
+                </div>
+            }
             @RenderBody()
         </main>
     </div>
 
     <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Lagerverwaltung - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        <div class="container-xl">
+            &copy; 2026 - Lagerverwaltung - <a asp-area="" asp-controller="Home" asp-action="Privacy">Datenschutz</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

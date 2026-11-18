@@ -1,0 +1,22 @@
+@model RaumFormViewModel
+
+<div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+<input type="hidden" asp-for="ID" />
+
+<div class="mb-3">
+    <label asp-for="RaumNum" class="form-label"></label>
+    <input asp-for="RaumNum" type="number" min="1" class="form-control" placeholder="z. B. 313" />
+    <span asp-validation-for="RaumNum" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="BenutzerId" class="form-label"></label>
+    <select asp-for="BenutzerId" asp-items="Model.Verantwortliche" class="form-select">
+        <option value="">– LehrerIn wählen –</option>
+    </select>
+    <div class="form-text">
+        Zur Auswahl stehen LehrerInnen ohne Labor. Gibt es die LehrerIn noch nicht, das Labor vorläufig Ihnen zuordnen
+        und danach unter <a asp-controller="Benutzer" asp-action="Create">Benutzer anlegen</a> umhängen.
+    </div>
+    <span asp-validation-for="BenutzerId" class="text-danger small"></span>
+</div>
