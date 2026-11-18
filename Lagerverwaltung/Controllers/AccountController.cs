@@ -58,12 +58,21 @@ namespace Lagerverwaltung.Controllers
                 .FirstOrDefaultAsync(b => b.Username == model.Username);
 
             //Checks if User is null or Password is incorrect
-            if (benutzer == null ||
-                _passwordHasher.VerifyHashedPassword(benutzer, benutzer.Password, model.Password)
-                    == PasswordVerificationResult.Failed)
+            var check = benutzer == null
+                ? PasswordVerificationResult.Failed
+                : _passwordHasher.VerifyHashedPassword(benutzer, benutzer.Password, model.Password);
+
+            if (benutzer == null || check == PasswordVerificationResult.Failed)
             {
                 ModelState.AddModelError("", "Benutzername oder Passwort falsch");
                 return View(model);
+            }
+
+            // Old Block 1 hash: store it again in the new PBKDF2 format (shared with the REST API).
+            if (check == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                benutzer.Password = _passwordHasher.HashPassword(benutzer, model.Password);
+                await _db.SaveChangesAsync();
             }
 
             // Create claims for the authenticated user

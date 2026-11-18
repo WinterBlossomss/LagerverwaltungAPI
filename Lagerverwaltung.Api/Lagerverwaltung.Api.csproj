@@ -4,6 +4,8 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Same id as the MVC project: both apps read the same User Secrets, so they share the pepper. -->
+    <UserSecretsId>8d2a6fbc-fa41-4f7f-8c9e-0e7d32fae732</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
