@@ -4,14 +4,22 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+#nullable enable
+
 namespace Lagerverwaltung.Api.Models
 {
     public partial class spGetAllArtikelFilteredResult
     {
+        public int ID { get; set; }
         [StringLength(100)]
-        public string Name { get; set; }
+        public string Name { get; set; } = default!;
         public int? SerienNum { get; set; }
-        public int Kategorie { get; set; }
-        public int? Hersteller { get; set; }
+        public int KategorieId { get; set; }
+        [StringLength(100)]
+        public string KategorieName { get; set; } = default!;
+        public int? HerstellerId { get; set; }
+        [StringLength(50)]
+        public string? HerstellerName { get; set; }
+        public int Bestand { get; set; }
     }
 }

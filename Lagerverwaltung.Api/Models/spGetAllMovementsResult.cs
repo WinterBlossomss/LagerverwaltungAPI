@@ -4,21 +4,30 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+#nullable enable
+
 namespace Lagerverwaltung.Api.Models
 {
     public partial class spGetAllMovementsResult
     {
         public int ID { get; set; }
-        public DateOnly Datum { get; set; }
+        public DateTime Datum { get; set; }
         [StringLength(20)]
-        public string BewegungArt { get; set; }
+        public string BewegungArt { get; set; } = default!;
+        public int ArtikelId { get; set; }
         [StringLength(100)]
-        public string Artikel { get; set; }
-        public int? ArtikelMenge { get; set; }
-        public bool? IsDone { get; set; }
+        public string Artikel { get; set; } = default!;
+        public int? SerienNum { get; set; }
+        public int Menge { get; set; }
+        [StringLength(13)]
+        public string Status { get; set; } = default!;
         [StringLength(20)]
-        public string GebuchtVon { get; set; }
-        public int VonRaum { get; set; }
-        public int ZuRaum { get; set; }
+        public string GebuchtVon { get; set; } = default!;
+        public int VonRaumId { get; set; }
+        [StringLength(20)]
+        public string? VonRaum { get; set; }
+        public int ZuRaumId { get; set; }
+        [StringLength(20)]
+        public string? ZuRaum { get; set; }
     }
 }

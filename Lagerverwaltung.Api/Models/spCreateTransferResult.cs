@@ -4,15 +4,12 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+#nullable enable
+
 namespace Lagerverwaltung.Api.Models
 {
-    public partial class spLoginResult
+    public partial class spCreateTransferResult
     {
-        public int? UserId { get; set; }
-        [StringLength(20)]
-        public string Username { get; set; }
-        [StringLength(20)]
-        public string Role { get; set; }
-        public DateTime? ExpiresAt { get; set; }
+        public int? NewId { get; set; }
     }
 }

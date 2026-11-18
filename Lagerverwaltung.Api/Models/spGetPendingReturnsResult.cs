@@ -4,18 +4,23 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+#nullable enable
+
 namespace Lagerverwaltung.Api.Models
 {
     public partial class spGetPendingReturnsResult
     {
         public int ID { get; set; }
-        public DateOnly Datum { get; set; }
+        public DateTime Datum { get; set; }
+        public int ArtikelId { get; set; }
         [StringLength(100)]
-        public string Artikel { get; set; }
-        public int? ArtikelMenge { get; set; }
+        public string Artikel { get; set; } = default!;
+        public int? SerienNum { get; set; }
+        public int Menge { get; set; }
+        public int VonLaborId { get; set; }
         [StringLength(20)]
-        public string Username { get; set; }
-        public int VonRaum { get; set; }
-        public int ZuRaum { get; set; }
+        public string? VonLabor { get; set; }
+        [StringLength(20)]
+        public string GebuchtVon { get; set; } = default!;
     }
 }
