@@ -42,12 +42,20 @@ namespace Lagerverwaltung.Api.Controllers
         {
             var user = (await Db.spGetUserForLoginAsync(request.Username.Trim())).SingleOrDefault();
 
-            if (user is null || !_passwords.Verify(request.Password, user.PasswordHash))
+            bool ok = user is not null && _passwords.Verify(request.Password, user.PasswordHash);
+            bool oldFormat = !ok && user is not null && _passwords.VerifyLegacy(request.Password, user.PasswordHash);
+
+            if (user is null || (!ok && !oldFormat))
                 return Unauthorized(new { error = "Benutzername oder Kennwort falsch." });
 
             string token = TokenService.CreateToken();
+            byte[] tokenHash = TokenService.HashToken(token);
             DateTime expiresAt = DateTime.UtcNow.Add(TokenService.Lifetime);
-            await Db.spCreateApiTokenAsync(user.UserId, TokenService.HashToken(token), expiresAt);
+            await Db.spCreateApiTokenAsync(user.UserId, tokenHash, expiresAt);
+
+            // Users from Block 1 still have the old hash format: store a new PBKDF2 hash (new salt) now.
+            if (oldFormat)
+                await Db.spUpdateOwnProfileAsync(tokenHash, null, _passwords.Hash(request.Password));
 
             return Ok(new LoginResponse(token, expiresAt, user.UserId, user.Username, user.RoleName));
         }
