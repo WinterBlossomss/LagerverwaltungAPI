@@ -82,6 +82,64 @@ namespace Lagerverwaltung.Api.Models
             return _;
         }
 
+        public virtual async Task<int> spAlterArtikelAsync(byte[] tokenHash, int? id, string name, int? serienNum, int? kategorie, int? hersteller, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default)
+        {
+            var parameterreturnValue = new SqlParameter
+            {
+                ParameterName = "returnValue",
+                Direction = System.Data.ParameterDirection.Output,
+                SqlDbType = System.Data.SqlDbType.Int,
+            };
+
+            var sqlParameters = new []
+            {
+                new SqlParameter
+                {
+                    ParameterName = "TokenHash",
+                    Size = 32,
+                    Value = tokenHash ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.VarBinary,
+                },
+                new SqlParameter
+                {
+                    ParameterName = "Id",
+                    Value = id ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.Int,
+                },
+                new SqlParameter
+                {
+                    ParameterName = "Name",
+                    Size = 100,
+                    Value = name ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.NVarChar,
+                },
+                new SqlParameter
+                {
+                    ParameterName = "SerienNum",
+                    Value = serienNum ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.Int,
+                },
+                new SqlParameter
+                {
+                    ParameterName = "Kategorie",
+                    Value = kategorie ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.Int,
+                },
+                new SqlParameter
+                {
+                    ParameterName = "Hersteller",
+                    Value = hersteller ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.Int,
+                },
+                parameterreturnValue,
+            };
+            var _ = await _context.Database.ExecuteSqlRawAsync("EXEC @returnValue = [dbo].[spAlterArtikel] @TokenHash = @TokenHash, @Id = @Id, @Name = @Name, @SerienNum = @SerienNum, @Kategorie = @Kategorie, @Hersteller = @Hersteller", sqlParameters, cancellationToken);
+
+            returnValue?.SetValue(parameterreturnValue.Value);
+
+            return _;
+        }
+
         public virtual async Task<int> spAlterCategoryAsync(byte[] tokenHash, int? id, string name, int? modelNum, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default)
         {
             var parameterreturnValue = new SqlParameter
@@ -618,6 +676,39 @@ namespace Lagerverwaltung.Api.Models
             return _;
         }
 
+        public virtual async Task<int> spDeleteArtikelAsync(byte[] tokenHash, int? id, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default)
+        {
+            var parameterreturnValue = new SqlParameter
+            {
+                ParameterName = "returnValue",
+                Direction = System.Data.ParameterDirection.Output,
+                SqlDbType = System.Data.SqlDbType.Int,
+            };
+
+            var sqlParameters = new []
+            {
+                new SqlParameter
+                {
+                    ParameterName = "TokenHash",
+                    Size = 32,
+                    Value = tokenHash ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.VarBinary,
+                },
+                new SqlParameter
+                {
+                    ParameterName = "Id",
+                    Value = id ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.Int,
+                },
+                parameterreturnValue,
+            };
+            var _ = await _context.Database.ExecuteSqlRawAsync("EXEC @returnValue = [dbo].[spDeleteArtikel] @TokenHash = @TokenHash, @Id = @Id", sqlParameters, cancellationToken);
+
+            returnValue?.SetValue(parameterreturnValue.Value);
+
+            return _;
+        }
+
         public virtual async Task<int> spDeleteCategoryAsync(byte[] tokenHash, int? id, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default)
         {
             var parameterreturnValue = new SqlParameter
@@ -1073,7 +1164,7 @@ namespace Lagerverwaltung.Api.Models
             return _;
         }
 
-        public virtual async Task<int> spRegisterAsync(int? rolle, string username, string password, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default)
+        public virtual async Task<int> spRegisterAsync(string username, string password, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default)
         {
             var parameterreturnValue = new SqlParameter
             {
@@ -1084,12 +1175,6 @@ namespace Lagerverwaltung.Api.Models
 
             var sqlParameters = new []
             {
-                new SqlParameter
-                {
-                    ParameterName = "Rolle",
-                    Value = rolle ?? Convert.DBNull,
-                    SqlDbType = System.Data.SqlDbType.Int,
-                },
                 new SqlParameter
                 {
                     ParameterName = "Username",
@@ -1106,7 +1191,7 @@ namespace Lagerverwaltung.Api.Models
                 },
                 parameterreturnValue,
             };
-            var _ = await _context.Database.ExecuteSqlRawAsync("EXEC @returnValue = [dbo].[spRegister] @Rolle = @Rolle, @Username = @Username, @Password = @Password", sqlParameters, cancellationToken);
+            var _ = await _context.Database.ExecuteSqlRawAsync("EXEC @returnValue = [dbo].[spRegister] @Username = @Username, @Password = @Password", sqlParameters, cancellationToken);
 
             returnValue?.SetValue(parameterreturnValue.Value);
 

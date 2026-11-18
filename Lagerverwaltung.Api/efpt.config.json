@@ -23,6 +23,10 @@
          "ObjectType": 1
       },
       {
+         "Name": "[dbo].[spAlterArtikel]",
+         "ObjectType": 1
+      },
+      {
          "Name": "[dbo].[spAlterCategory]",
          "ObjectType": 1
       },
@@ -68,6 +72,10 @@
       },
       {
          "Name": "[dbo].[spCreateTransfer]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spDeleteArtikel]",
          "ObjectType": 1
       },
       {

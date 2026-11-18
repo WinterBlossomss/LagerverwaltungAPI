@@ -14,6 +14,7 @@ namespace Lagerverwaltung.Api.Models
     public partial interface ILagerverwaltungssystemContextProcedures
     {
         Task<int> spAcceptReturnAsync(byte[] tokenHash, int? returnId, int? hauptlagerRaumId, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
+        Task<int> spAlterArtikelAsync(byte[] tokenHash, int? id, string name, int? serienNum, int? kategorie, int? hersteller, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spAlterCategoryAsync(byte[] tokenHash, int? id, string name, int? modelNum, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spAlterRoomAsync(byte[] tokenHash, int? id, int? raumTyp, int? benutzer, int? raumNum, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spAlterUserRoleAsync(int? iD, int? rolle, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
@@ -26,6 +27,7 @@ namespace Lagerverwaltung.Api.Models
         Task<int> spCreateRoomAsync(byte[] tokenHash, int? raumTyp, int? benutzer, int? raumNum, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spCreateTokenAsync(int? id, byte[] tokenHash, DateTime? expiresAt, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spCreateTransferAsync(byte[] tokenHash, int? vonRaumId, int? zuRaumId, int? artikelId, int? menge, int? bewegungId, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
+        Task<int> spDeleteArtikelAsync(byte[] tokenHash, int? id, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spDeleteCategoryAsync(byte[] tokenHash, int? id, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spDeleteRoomAsync(byte[] tokenHash, int? iD, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spDeleteUserAsync(byte[] tokenHash, string username, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
@@ -40,7 +42,7 @@ namespace Lagerverwaltung.Api.Models
         Task<List<spGetUserForLoginResult>> spGetUserForLoginAsync(string username, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
         Task<List<spGetUserInfoResult>> spGetUserInfoAsync(byte[] tokenHash, string username, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
         Task<List<spLoginResult>> spLoginAsync(string username, string password, byte[] tokenHash, int? tokenLifetimeMinutes, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
-        Task<int> spRegisterAsync(int? rolle, string username, string password, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
+        Task<int> spRegisterAsync(string username, string password, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spUpdateOwnProfileAsync(byte[] tokenHash, string currentPassword, string newUsername, string newPassword, OutputParameter<int> returnValue = null, CancellationToken cancellationToken = default);
     }
 }

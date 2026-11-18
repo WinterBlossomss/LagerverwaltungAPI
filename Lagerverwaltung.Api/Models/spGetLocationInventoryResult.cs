@@ -15,6 +15,8 @@ namespace Lagerverwaltung.Api.Models
         [StringLength(100)]
         public string KategorieName { get; set; }
         public int? ModelNum { get; set; }
+        [StringLength(50)]
+        public string HerstellerName { get; set; }
         public int Menge { get; set; }
     }
 }
