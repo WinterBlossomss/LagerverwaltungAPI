@@ -1,3 +1,5 @@
+using Lagerverwaltung.Api.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lagerverwaltung.Api
 {
@@ -6,6 +8,9 @@ namespace Lagerverwaltung.Api
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            var connectionString = builder.Configuration.GetConnectionString("LagerverwaltungssystemContext") ?? throw new InvalidOperationException("Connection string 'LagerverwaltungssystemContext' not found.");
+
+            builder.Services.AddDbContext<LagerverwaltungssystemContext>(options => options.UseSqlServer(connectionString));
 
             // Add services to the container.
 
@@ -24,7 +29,6 @@ namespace Lagerverwaltung.Api
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
 
             app.MapControllers();
 

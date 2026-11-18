@@ -19,48 +19,120 @@
    "T4TemplatePath": null,
    "Tables": [
       {
-         "Name": "[dbo].[ApiTable]",
-         "ObjectType": 0
+         "Name": "[dbo].[spAcceptReturn]",
+         "ObjectType": 1
       },
       {
-         "Name": "[dbo].[Artikel]",
-         "ObjectType": 0
+         "Name": "[dbo].[spAlterCategory]",
+         "ObjectType": 1
       },
       {
-         "Name": "[dbo].[Benutzer]",
-         "ObjectType": 0
+         "Name": "[dbo].[spAlterRoom]",
+         "ObjectType": 1
       },
       {
-         "Name": "[dbo].[BewegungArt]",
-         "ObjectType": 0
+         "Name": "[dbo].[spAlterUserRole]",
+         "ObjectType": 1
       },
       {
-         "Name": "[dbo].[Hersteller]",
-         "ObjectType": 0
+         "Name": "[dbo].[spAuthorize]",
+         "ObjectType": 1
       },
       {
-         "Name": "[dbo].[Kategorie]",
-         "ObjectType": 0
+         "Name": "[dbo].[spConfirmTransfer]",
+         "ObjectType": 1
       },
       {
-         "Name": "[dbo].[Lagerbewegungen]",
-         "ObjectType": 0
+         "Name": "[dbo].[spCreateApiToken]",
+         "ObjectType": 1
       },
       {
-         "Name": "[dbo].[Raum]",
-         "ObjectType": 0
+         "Name": "[dbo].[spCreateArtikel]",
+         "ObjectType": 1
       },
       {
-         "Name": "[dbo].[RaumArtikel]",
-         "ObjectType": 0
+         "Name": "[dbo].[spCreateCategory]",
+         "ObjectType": 1
       },
       {
-         "Name": "[dbo].[RaumTyp]",
-         "ObjectType": 0
+         "Name": "[dbo].[spCreateReturn]",
+         "ObjectType": 1
       },
       {
-         "Name": "[dbo].[Rolle]",
-         "ObjectType": 0
+         "Name": "[dbo].[spCreateRoom]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spCreateToken]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spCreateTransfer]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spDeleteCategory]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spDeleteRoom]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spDeleteUser]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spGetAllArtikelFiltered]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spGetAllCategories]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spGetAllMovements]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spGetAllRooms]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spGetAllUsers]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spGetLocationInventory]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spGetPendingReturns]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spGetPendingTransfers]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spGetUserForLogin]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spGetUserInfo]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spLogin]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spRegister]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spUpdateOwnProfile]",
+         "ObjectType": 1
       }
    ],
    "UiHint": null,
