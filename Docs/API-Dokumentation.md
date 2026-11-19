@@ -1,6 +1,6 @@
 # API-Dokumentation – Lagerverwaltung REST-API
 
-Diese Dokumentation beschreibt alle Endpunkte der REST-API `Lagerverwaltung.Api` (Block 2).
+Diese Dokumentation beschreibt alle 37 Endpunkte der REST-API `Lagerverwaltung.Api` (Block 2).
 Alle Beispiele stammen aus einem echten Testlauf der Datei `Lagerverwaltung.Api/Lagerverwaltung.http`
 gegen eine frisch aufgesetzte Datenbank (siehe [Testdokumentation.md](Testdokumentation.md)).
 
@@ -47,10 +47,15 @@ gegen eine frisch aufgesetzte Datenbank (siehe [Testdokumentation.md](Testdokume
 | 31 | GET | `/api/returns/pending` | Administrator | Offene Rückgaben |
 | 32 | POST | `/api/returns/{id}/accept` | Administrator | Rückgabe annehmen: Umbuchungslager → Hauptlager |
 | 33 | GET | `/api/movements` | Administrator (alle) / LehrerIn (eigenes Labor) | Bewegungshistorie |
+| 34 | GET | `/api/manufacturers` | angemeldet | Hersteller anzeigen |
+| 35 | POST | `/api/manufacturers` | Administrator | Hersteller erstellen |
+| 36 | PUT | `/api/manufacturers/{id}` | Administrator | Hersteller ändern |
+| 37 | DELETE | `/api/manufacturers/{id}` | Administrator | Hersteller löschen (nur wenn unbenutzt) |
 
 Zusätzlich zur Aufgabenstellung gibt es `POST /api/auth/logout`, `GET /api/locations/mine`,
 `PUT /api/locations/{id}/teacher` (die geforderte Zuordnungsfunktion) und `POST /api/articles/{id}/stock`
-(ohne Zugang gäbe es keinen Bestand, den man ausgeben könnte).
+(ohne Zugang gäbe es keinen Bestand, den man ausgeben könnte) sowie die Hersteller-Verwaltung `/api/manufacturers`
+(Artikel verweisen auf einen Hersteller, also muss man Hersteller auch anlegen und pflegen können).
 
 ---
 
@@ -267,7 +272,33 @@ Fehler: `400`, `404` „Kategorie nicht gefunden.“, `409` „Eine Kategorie mi
 
 `204`, oder `409` „Kategorie wird noch von Artikeln verwendet.“
 
-### 4.4 Artikel – `/api/articles`
+### 4.4 Hersteller – `/api/manufacturers`
+
+#### GET /api/manufacturers  (angemeldet)
+
+```json
+[ { "id": 4, "name": "Cisco" }, { "id": 1, "name": "Dell" }, { "id": 6, "name": "Epson" } ]
+```
+
+#### POST /api/manufacturers  ·  PUT /api/manufacturers/{id}  (Administrator)
+
+| Feld | Typ | Regeln |
+|---|---|---|
+| `name` | string | Pflicht, 1–50 Zeichen (wie die Spalte `Hersteller.Name`), eindeutig |
+
+```json
+{ "name": "Testhersteller" }
+```
+
+POST → `201 { "id": 10 }`, PUT → `204`.
+Fehler: `400` (leerer Name), `403` für eine LehrerIn, `404` „Hersteller nicht gefunden.“,
+`409` „Ein Hersteller mit diesem Namen existiert bereits.“
+
+#### DELETE /api/manufacturers/{id}  (Administrator)
+
+`204`, oder `409` „Hersteller wird noch von Artikeln verwendet.“ – so verliert kein Artikel seinen Hersteller.
+
+### 4.5 Artikel – `/api/articles`
 
 Ein Artikel **mit Seriennummer** ist genau **ein Gerät** (Menge immer 1).
 Ein Artikel **ohne Seriennummer** wird **mengenmäßig** verwaltet (z. B. 40 Kabel).
@@ -335,7 +366,7 @@ Fehler: `400` (Kategorie/Hersteller existiert nicht), `404`, `409` „Diese Seri
 Bei einem Seriennummern-Artikel nur `menge = 1` und nur, solange das Gerät noch nicht im Bestand ist
 (`409` „Dieses Gerät (Seriennummer) ist bereits im Bestand.“).
 
-### 4.5 Standorte – `/api/locations`
+### 4.6 Standorte – `/api/locations`
 
 Standorte sind die Zeilen der Tabelle `Raum` mit dem Typ `Hauptlager`, `Umbuchungslager` oder `Labor`.
 Hauptlager und Umbuchungslager gibt es jeweils genau einmal.
@@ -396,7 +427,7 @@ Raumnummer vergeben, LehrerIn hat schon ein Labor).
 
 `403` „Kein Zugriff auf diesen Standort.“ für ein fremdes Labor, `404` wenn es den Standort nicht gibt.
 
-### 4.6 Übergaben – `/api/transfers`
+### 4.7 Übergaben – `/api/transfers`
 
 #### POST /api/transfers  (Administrator) – Ausgabe
 
@@ -432,7 +463,7 @@ eine Bewegung „Übernahme“ geschrieben.
 Fehler: `403` „Nur die zuständige LehrerIn kann diese Übergabe bestätigen.“, `404`,
 `409` „Diese Übergabe wurde bereits bestätigt.“
 
-### 4.7 Rückgaben – `/api/returns`
+### 4.8 Rückgaben – `/api/returns`
 
 #### POST /api/returns  (zuständige LehrerIn)
 
@@ -456,7 +487,7 @@ Fehler: `403` „Nur die zuständige LehrerIn kann aus diesem Labor zurückgeben
 Kein Body. `204`. Bestand: Umbuchungslager −Menge, Hauptlager +Menge. Die Rückgabe wird abgeschlossen,
 eine Bewegung „Einbuchung“ wird geschrieben. `409` „Diese Rückgabe wurde bereits abgeschlossen.“
 
-### 4.8 Bewegungshistorie – `/api/movements`
+### 4.9 Bewegungshistorie – `/api/movements`
 
 #### GET /api/movements?raumId=&artikelId=  (angemeldet)
 

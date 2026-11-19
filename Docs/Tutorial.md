@@ -92,7 +92,7 @@ Stored Procedure  (Database/StoredProcedures.sql)
 
 | Ordner | Inhalt | Aufgabe |
 |---|---|---|
-| `Controllers/` | `AuthController`, `UsersController`, `CategoriesController`, `ArticlesController`, `LocationsController`, `TransfersController`, `ReturnsController`, `MovementsController`, Basisklasse `ApiControllerBase` | HTTP-Endpunkte. Sie enthalten **keine** Geschäftsregeln, nur: Eingabe lesen → Prozedur aufrufen → Statuscode zurückgeben |
+| `Controllers/` | `AuthController`, `UsersController`, `CategoriesController`, `ManufacturersController`, `ArticlesController`, `LocationsController`, `TransfersController`, `ReturnsController`, `MovementsController`, Basisklasse `ApiControllerBase` | HTTP-Endpunkte. Sie enthalten **keine** Geschäftsregeln, nur: Eingabe lesen → Prozedur aufrufen → Statuscode zurückgeben |
 | `DTOs/` | `record`-Typen wie `LoginRequest`, `ArticleRequest`, `MovementRequest` | Form der JSON-Daten und Validierung mit Attributen (`[Required]`, `[Range]`, `[StringLength]`) |
 | `Services/` | `PasswordService`, `TokenService` | Kennwort-Hashing (PBKDF2 + Salt + Pepper) und Token-Erzeugung (Zufall + SHA-256) |
 | `Models/` | `LagerverwaltungssystemContext`, Prozedur-Wrapper, `sp…Result` | Datenbankzugriff (generiert) |
@@ -241,6 +241,7 @@ Jede geschützte Prozedur bekommt als ersten Parameter `@TokenHash VARBINARY(32)
 | Benutzer | `spAlterUserRole` | `@UserId`, `@RoleName` | PUT users/{id}/role |
 | Benutzer | `spDeleteUser` | `@UserId` (NULL = eigenes Konto) | DELETE users/me, users/{id} |
 | Kategorien | `spGetAllCategories`, `spCreateCategory`, `spAlterCategory`, `spDeleteCategory` | `@Id`, `@Name`, `@ModelNum` | /api/categories |
+| Hersteller | `spGetAllManufacturers`, `spCreateManufacturer`, `spAlterManufacturer`, `spDeleteManufacturer` | `@Id`, `@Name` | /api/manufacturers |
 | Artikel | `spGetAllArtikelFiltered` | `@Name`, `@SerienNum`, `@KategorieId`, `@HerstellerId`, `@RaumId` | GET articles |
 | Artikel | `spGetArtikelById` | `@Id` | GET articles/{id} |
 | Artikel | `spCreateArtikel`, `spAlterArtikel` | (`@Id`), `@Name`, `@SerienNum`, `@KategorieId`, `@HerstellerId` | POST/PUT articles |

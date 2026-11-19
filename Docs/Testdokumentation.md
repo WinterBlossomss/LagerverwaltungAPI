@@ -1,6 +1,6 @@
 # Testdokumentation – Lagerverwaltung REST-API
 
-Alle Tests stehen in `Lagerverwaltung.Api/Lagerverwaltung.http` (77 Anfragen, Abschnitte 1–9).
+Alle Tests stehen in `Lagerverwaltung.Api/Lagerverwaltung.http` (90 Anfragen, Abschnitte 1–10).
 Die Antworten unten stammen aus einem echten Lauf vom **19.11.2026**.
 
 ---
@@ -12,7 +12,7 @@ Die Antworten unten stammen aus einem echten Lauf vom **19.11.2026**.
 | Datenbank | frisch erstellt: `script.sql` → Testdaten der MVC-App (`SeedService`) → `Schemaanpassungen.sql` → `StoredProcedures.sql` |
 | API | `Lagerverwaltung.Api`, Profil **https**, `https://localhost:7154`, Environment *Development* |
 | Werkzeug | Visual Studio `.http`-Datei (Anfragen von oben nach unten senden) |
-| Ergebnis | **77 von 77 Anfragen** lieferten den erwarteten Statuscode. Ein zweiter Lauf auf derselben Datenbank ebenfalls 77/77 (die Datei ist wiederholbar) |
+| Ergebnis | **90 von 90 Anfragen** lieferten den erwarteten Statuscode. Ein zweiter Lauf auf derselben Datenbank ebenfalls 90/90 (die Datei ist wiederholbar) |
 
 ### Testbenutzer
 
@@ -44,7 +44,7 @@ In den Antworten unten ist das Token durch `<TOKEN>` ersetzt.
 | 1 | Erfolgreiche Registrierung und Anmeldung | 1.1, 1.4 | 201, 200 + Token | ✅ 201, 200 |
 | 2 | Anmeldung mit falschem Kennwort | 1.5 (und 1.6 unbekannter Benutzer) | 401 | ✅ 401 (gleiche Meldung) |
 | 3 | Geschützter Endpunkt ohne Token | 2.1 (2.2 ungültiges Token) | 401 | ✅ 401 |
-| 4 | LehrerIn ruft Administratorfunktion auf | 2.4, 2.5 | 403 | ✅ 403 |
+| 4 | LehrerIn ruft Administratorfunktion auf | 2.4, 2.5, 9.2 | 403 | ✅ 403 |
 | 5 | LehrerIn greift auf fremdes Labor zu | 2.10, 2.11 (6.3) | 403 | ✅ 403 |
 | 6 | Administrator erstellt und ändert einen Artikel | 4.2, 4.3, 4.4 | 201, 204, 200 | ✅ |
 | 7 | Artikel mit Seriennummer | 4.6, 4.7, 4.8, 4.9 | 201, 200, 409, 400 | ✅ |
@@ -53,7 +53,7 @@ In den Antworten unten ist das Token durch `<TOKEN>` ersetzt.
 | 10 | Rückgabe über Umbuchungslager ins Hauptlager | 5.12, 5.14, 5.16 | 201, 200, 204 | ✅ |
 | 11 | Buchung bei zu geringem Bestand | 5.2, 5.10 | 409 | ✅ 409 |
 | 12 | Bestätigte Übergabe erneut bestätigen | 5.8 | 409 | ✅ 409 |
-| 13 | Ungültige Eingaben | 1.2, 1.7, 3.4, 4.10, 5.3 | 400 | ✅ 400 |
+| 13 | Ungültige Eingaben | 1.2, 1.7, 3.4, 4.10, 5.3, 9.5 | 400 | ✅ 400 |
 | 14 | Bewegungshistorie enthält die Aktionen | 6.1, 6.2 | 200 | ✅ |
 
 ### Ausgewählte Antworten
@@ -334,7 +334,8 @@ eigenen Labors; ein Filter auf Emilys Labor (6.3) ergibt `403`.
 | 4.11, 4.12 | Artikel mit Bestand löschen (409), benutzte Kategorie löschen (409) | ✅ |
 | 7 Standorte | Liste, Labor anlegen, Raumnummer ändern, LehrerIn mit zweitem Labor (409), Zuordnung, Hauptlager löschen (409), leeres Labor löschen (204) | ✅ |
 | 8 Benutzer | Benutzerliste, unbekannte Rolle (400), Rolle ändern, Benutzer mit Historie löschen (409), falsches aktuelles Kennwort (400), Kennwort ändern, eigenes Konto löschen, Login danach (401) | ✅ |
-| 9 Logout | Logout (204), Token danach ungültig (401), zweiter Logout (401) | ✅ |
+| 9 Hersteller | Anzeigen (LehrerIn 200), LehrerIn erstellt (403), erstellen (201), doppelter Name (409), leerer Name (400), ändern (204), nicht vorhanden (404), Artikel mit Hersteller anlegen und danach filtern, benutzten Hersteller löschen (409), unbenutzten löschen (204), nochmals löschen (404) | ✅ |
+| 10 Logout | Logout (204), Token danach ungültig (401), zweiter Logout (401) | ✅ |
 
 ### Gleichzeitige Bestätigungen
 
