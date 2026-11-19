@@ -607,17 +607,114 @@ Content-Type: application/json
 
 
 ###############################################################################
-# 9. LOGOUT
+# 9. MANUFACTURERS (Hersteller)
 ###############################################################################
 
-### 9.1 Emily logs out -> 204
+### 9.1 All manufacturers (any logged-in user) -> 200
+GET {{baseUrl}}/api/manufacturers
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+### 9.2 [Case 4] LehrerIn tries to create a manufacturer -> 403
+POST {{baseUrl}}/api/manufacturers
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Darf ich nicht"
+}
+
+### 9.3 Admin creates a manufacturer -> 201
+# @name newManufacturer
+POST {{baseUrl}}/api/manufacturers
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Testhersteller {{$randomInt 10000 99999}}"
+}
+
+### 9.4 Manufacturer name that already exists ("Dell" from the test data) -> 409
+POST {{baseUrl}}/api/manufacturers
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Dell"
+}
+
+### 9.5 [Case 13] Manufacturer with empty name -> 400
+POST {{baseUrl}}/api/manufacturers
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": ""
+}
+
+### 9.6 Rename the manufacturer -> 204
+PUT {{baseUrl}}/api/manufacturers/{{newManufacturer.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Testhersteller geändert {{$randomInt 10000 99999}}"
+}
+
+### 9.7 Change a manufacturer that doesn't exist -> 404
+PUT {{baseUrl}}/api/manufacturers/999999
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Gibt es nicht"
+}
+
+### 9.8 Admin creates an article of this manufacturer -> 201
+# @name artManufacturer
+POST {{baseUrl}}/api/articles
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Test-Maus",
+  "serienNum": null,
+  "kategorieId": {{newCategory.response.body.$.id}},
+  "herstellerId": {{newManufacturer.response.body.$.id}}
+}
+
+### 9.9 Search articles by manufacturer -> 200 (contains "Test-Maus")
+GET {{baseUrl}}/api/articles?herstellerId={{newManufacturer.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 9.10 Delete a manufacturer that is still used by an article -> 409
+DELETE {{baseUrl}}/api/manufacturers/{{newManufacturer.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 9.11 Delete the article (no stock, no history) -> 204
+DELETE {{baseUrl}}/api/articles/{{artManufacturer.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 9.12 Now the manufacturer is unused and can be deleted -> 204
+DELETE {{baseUrl}}/api/manufacturers/{{newManufacturer.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 9.13 Delete it again -> 404
+DELETE {{baseUrl}}/api/manufacturers/{{newManufacturer.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+
+###############################################################################
+# 10. LOGOUT
+###############################################################################
+
+### 10.1 Emily logs out -> 204
 POST {{baseUrl}}/api/auth/logout
 Authorization: Bearer {{loginEmily.response.body.$.token}}
 
-### 9.2 Emily's token no longer works -> 401
+### 10.2 Emily's token no longer works -> 401
 GET {{baseUrl}}/api/users/me
 Authorization: Bearer {{loginEmily.response.body.$.token}}
 
-### 9.3 Logout with the same token again -> 401
+### 10.3 Logout with the same token again -> 401
 POST {{baseUrl}}/api/auth/logout
 Authorization: Bearer {{loginEmily.response.body.$.token}}
