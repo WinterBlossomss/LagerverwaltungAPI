@@ -20,6 +20,7 @@ Lager- und Inventarverwaltung der BS EVITA.
 | `Docs/API-Dokumentation.md` | alle Endpunkte mit Berechtigungen, Bodies, Antworten und Statuscodes |
 | `Docs/Testdokumentation.md` | Testfälle und vollständiger Ablauf mit echten API-Antworten |
 | `Docs/ER-Diagramm.pdf` | ER-Diagramm |
+| `Docs/*.docx` | dieselben drei Dokumente als Word-Dateien (Layout wie `Lagerverwaltung/Docs/Lagerverwaltung_Doku.docx`) |
 
 ## Schnellstart API
 
