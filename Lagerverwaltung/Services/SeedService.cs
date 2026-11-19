@@ -323,8 +323,19 @@ namespace Lagerverwaltung.Services
             ILogger logger,
             string username, string password, Rolle rolle)
         {
-            if (await context.Benutzers.AnyAsync(b => b.Username == username))
+            var existing = await context.Benutzers.FirstOrDefaultAsync(b => b.Username == username);
+            if (existing != null)
+            {
+                // Upgrade seeded users that still have an old Block 1 hash to the new PBKDF2 format,
+                // so they can also log in through the REST API.
+                if (hasher.VerifyHashedPassword(existing, existing.Password, password) == PasswordVerificationResult.SuccessRehashNeeded)
+                {
+                    existing.Password = hasher.HashPassword(existing, password);
+                    await context.SaveChangesAsync();
+                    logger.LogInformation("Upgraded password hash of {Username}", username);
+                }
                 return;
+            }
 
             var benutzer = new Benutzer
             {

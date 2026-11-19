@@ -4,16 +4,25 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+#nullable enable
+
 namespace Lagerverwaltung.Api.Models
 {
     public partial class spGetPendingTransfersResult
     {
         public int ID { get; set; }
-        public DateOnly Datum { get; set; }
+        public DateTime Datum { get; set; }
+        public int ArtikelId { get; set; }
         [StringLength(100)]
-        public string Artikel { get; set; }
-        public int? ArtikelMenge { get; set; }
-        public int VonRaum { get; set; }
-        public int ZuRaum { get; set; }
+        public string Artikel { get; set; } = default!;
+        public int? SerienNum { get; set; }
+        public int Menge { get; set; }
+        public int LaborId { get; set; }
+        [StringLength(20)]
+        public string? Labor { get; set; }
+        [StringLength(20)]
+        public string ZustaendigeLehrerIn { get; set; } = default!;
+        [StringLength(20)]
+        public string AngelegtVon { get; set; } = default!;
     }
 }

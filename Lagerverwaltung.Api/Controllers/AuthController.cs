@@ -1,59 +1,80 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using Lagerverwaltung.Api.Helpers;
+﻿using Lagerverwaltung.Api.DTOs;
 using Lagerverwaltung.Api.Models;
+using Lagerverwaltung.Api.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 
 namespace Lagerverwaltung.Api.Controllers
 {
-    [ApiController]
     [Route("api/auth")]
-    public class AuthController : ControllerBase
+    public class AuthController : ApiControllerBase
     {
-        private readonly LagerverwaltungssystemContext _context;
+        private readonly PasswordService _passwords;
 
-        public AuthController(LagerverwaltungssystemContext context)
+        public AuthController(LagerverwaltungssystemContext context, PasswordService passwords) : base(context)
         {
-            _context = context;
+            _passwords = passwords;
         }
 
-        public record LoginRequest(string Username, string Password);
+        /// <summary>
+        /// POST /api/auth/register  (public)
+        /// Always creates a 'LehrerIn'. There is no role field: spRegister sets the role itself.
+        /// </summary>
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        {
+            return await Run(async () =>
+            {
+                string hash = _passwords.Hash(request.Password);   // new random salt + pepper
+                var result = await Db.spRegisterAsync(request.Username.Trim(), hash);
+                int id = result.Single().NewId!.Value;
 
-        // POST /api/auth/login
+                return Created("/api/users/me", new { id, username = request.Username.Trim(), role = "LehrerIn" });
+            });
+        }
+
+        /// <summary>
+        /// POST /api/auth/login  (public)
+        /// 1. spGetUserForLogin fetches the stored hash (the DB never sees the plain password).
+        /// 2. The password is verified here in C# with salt + pepper.
+        /// 3. A random token is created; only its SHA-256 hash is stored (spCreateApiToken).
+        /// 4. The raw token is returned exactly once.
+        /// Wrong username and wrong password give the SAME answer, so usernames can't be probed.
+        /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            //Generate a secure random Bearer token string for the client
-            byte[] randomBytes = RandomNumberGenerator.GetBytes(32);
-            string plainBearerToken = Convert.ToBase64String(randomBytes);
-
-            //Hash it with SHA-256 to store in the database
-            byte[] tokenHash = SHA256.HashData(Encoding.UTF8.GetBytes(plainBearerToken));
-
-            try
+            return await Run(async () =>
             {
-                //Call generated stored procedure
-                var result = await _context.Procedures.spLoginAsync(
-                    username: request.Username,
-                    password: request.Password,
-                    tokenHash: tokenHash,
-                    tokenLifetimeMinutes: 60
-                );
+                var user = (await Db.spGetUserForLoginAsync(request.Username.Trim())).SingleOrDefault();
 
-                var userInfo = result.FirstOrDefault();
+                bool ok = user is not null && _passwords.Verify(request.Password, user.PasswordHash);
+                bool oldFormat = !ok && user is not null && _passwords.VerifyLegacy(request.Password, user.PasswordHash);
 
-                //Return the plain Bearer token and user info to the user
-                return Ok(new
-                {
-                    token = plainBearerToken,
-                    user = userInfo
-                });
-            }
-            catch (SqlException ex)
+                if (user is null || (!ok && !oldFormat))
+                    return Unauthorized(new { error = "Benutzername oder Kennwort falsch." });
+
+                string token = TokenService.CreateToken();
+                byte[] tokenHash = TokenService.HashToken(token);
+                DateTime expiresAt = DateTime.UtcNow.Add(TokenService.Lifetime);
+                await Db.spCreateApiTokenAsync(user.UserId, tokenHash, expiresAt);
+
+                // Users from Block 1 still have the old hash format: store a new PBKDF2 hash (new salt) now.
+                if (oldFormat)
+                    await Db.spUpdateOwnProfileAsync(tokenHash, null, _passwords.Hash(request.Password));
+
+                return Ok(new LoginResponse(token, expiresAt, user.UserId, user.Username, user.RoleName));
+            });
+        }
+
+        /// <summary>POST /api/auth/logout: revokes the token that was sent. It stops working immediately.</summary>
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            return await Run(async () =>
             {
-                return ControllerHelper.HandleSqlException(this, ex);
-            }
+                await Db.spLogoutAsync(TokenHash);
+                return NoContent();
+            });
         }
     }
 }

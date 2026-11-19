@@ -1,0 +1,623 @@
+###############################################################################
+# Lagerverwaltung.http  -  API tests for Visual Studio 2026
+#
+# HOW TO USE
+# 1. Database: run Database/Schemaanpassungen.sql once, then Database/StoredProcedures.sql.
+# 2. Pepper: the API shares the User Secrets of the MVC app (same UserSecretsId),
+#    so if the MVC app already runs, nothing to do. Otherwise, in Lagerverwaltung.Api:
+#        dotnet user-secrets set "Security:Pepper" "<your secret>"
+# 3. Start the MVC app ONCE: its SeedService creates the test users and upgrades their
+#    password hashes to the PBKDF2 format that the API understands.
+# 4. Start Lagerverwaltung.Api with the "https" profile.
+# 5. Run the requests from top to bottom ("Send Request" above each ###).
+#
+# TOKENS
+# Requests with "# @name xyz" store their response. Later requests read values from it,
+# e.g. {{loginAdmin.response.body.$.token}}. So after the login requests you don't need to
+# copy any token by hand. (Manual alternative: copy "token" from the login response into
+# the @token variable below and use Authorization: Bearer {{token}}.)
+#
+# Test users come from the MVC SeedService (development only, placeholders, not real passwords):
+#   ADMIN / Admin123!     Administrator
+#   Dennis / 123          LehrerIn, Labor 309
+#   Emily / 123           LehrerIn, Labor 310
+# No real passwords, tokens or pepper values belong in this file.
+###############################################################################
+
+@baseUrl = https://localhost:7154
+@token = TOKEN_HIER_EINTRAGEN_FALLS_MANUELL
+@testUser = testlehrer
+@testPassword = TESTPASSWORT_123
+
+
+
+###############################################################################
+# 1. REGISTRATION AND LOGIN
+###############################################################################
+
+### 1.1 [Case 1] Register a new user -> 201 (role is always LehrerIn)
+#       Running it a second time gives 409 "Benutzername ist bereits vergeben" (also correct).
+# @name register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "{{testUser}}",
+  "password": "{{testPassword}}"
+}
+
+### 1.2 [Case 13] Registration with a too short password -> 400
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "kurz",
+  "password": "123"
+}
+
+### 1.3 Registration tries to make itself admin -> 201, the "role" field is ignored, user is LehrerIn
+#       Check "role" in the response: it is "LehrerIn". The random name makes the test repeatable.
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "hacker{{$randomInt 10000 99999}}",
+  "password": "{{testPassword}}",
+  "role": "Administrator",
+  "rolle": 1
+}
+
+### 1.4 [Case 1] Login of the new user -> 200 with token, role "LehrerIn"
+# @name loginTest
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{testUser}}",
+  "password": "{{testPassword}}"
+}
+
+### 1.5 [Case 2] Login with a wrong password -> 401
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{testUser}}",
+  "password": "falsches-kennwort"
+}
+
+### 1.6 Login with an unknown user -> 401 with the SAME message (usernames can't be probed)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "gibtesnicht",
+  "password": "egal12345"
+}
+
+### 1.7 [Case 13] Login with empty fields -> 400
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "",
+  "password": ""
+}
+
+### 1.8 Login Administrator
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "ADMIN",
+  "password": "Admin123!"
+}
+
+### 1.9 Login LehrerIn Dennis
+# @name loginDennis
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "Dennis",
+  "password": "123"
+}
+
+### 1.10 Login LehrerIn Emily
+# @name loginEmily
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "Emily",
+  "password": "123"
+}
+
+
+###############################################################################
+# 2. AUTHENTICATION AND PERMISSIONS
+###############################################################################
+
+### 2.1 [Case 3] Protected endpoint WITHOUT token -> 401
+GET {{baseUrl}}/api/users/me
+
+### 2.2 Protected endpoint with an invalid token -> 401
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer das-ist-kein-gueltiges-token
+
+### 2.3 Own data with a valid token -> 200
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+### 2.4 [Case 4] LehrerIn calls an administrator function -> 403
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+### 2.5 [Case 4] LehrerIn tries to create a category -> 403
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Darf ich nicht"
+}
+
+### 2.6 Rooms of Dennis (his Labor ID is used below)
+# @name dennisRooms
+GET {{baseUrl}}/api/locations/mine
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+### 2.7 Rooms of Emily
+# @name emilyRooms
+GET {{baseUrl}}/api/locations/mine
+Authorization: Bearer {{loginEmily.response.body.$.token}}
+
+### 2.8 Rooms of the Administrator: Hauptlager and Umbuchungslager
+# @name adminRooms
+GET {{baseUrl}}/api/locations/mine
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 2.9 Dennis looks at his OWN lab -> 200
+GET {{baseUrl}}/api/locations/{{dennisRooms.response.body.$[0].id}}/inventory
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+### 2.10 [Case 5] Dennis looks at Emily's lab -> 403
+GET {{baseUrl}}/api/locations/{{emilyRooms.response.body.$[0].id}}/inventory
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+### 2.11 [Case 5] Dennis filters articles by Emily's lab -> 403
+GET {{baseUrl}}/api/articles?raumId={{emilyRooms.response.body.$[0].id}}
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+
+###############################################################################
+# 3. CATEGORIES
+###############################################################################
+
+### 3.1 All categories (any logged-in user) -> 200
+GET {{baseUrl}}/api/categories
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+### 3.2 Create a category (admin) -> 201
+# @name newCategory
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Testkategorie {{$randomInt 10000 99999}}",
+  "modelNum": 1
+}
+
+### 3.3 Change the category -> 204
+PUT {{baseUrl}}/api/categories/{{newCategory.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Testkategorie geändert {{$randomInt 10000 99999}}",
+  "modelNum": 2
+}
+
+### 3.4 [Case 13] Category with empty name -> 400
+POST {{baseUrl}}/api/categories
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": ""
+}
+
+### 3.5 Change a category that doesn't exist -> 404
+PUT {{baseUrl}}/api/categories/999999
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Gibt es nicht"
+}
+
+
+###############################################################################
+# 4. ARTICLES
+###############################################################################
+
+### 4.1 Search with filters (name, category, ...) -> 200
+GET {{baseUrl}}/api/articles?name=a
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 4.2 [Case 6] Admin creates an article WITHOUT serial number -> 201
+# @name artQty
+POST {{baseUrl}}/api/articles
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Test-Kabel HDMI 2m",
+  "serienNum": null,
+  "kategorieId": {{newCategory.response.body.$.id}}
+}
+
+### 4.3 [Case 6] Admin changes the article -> 204
+PUT {{baseUrl}}/api/articles/{{artQty.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Test-Kabel HDMI 3m",
+  "serienNum": null,
+  "kategorieId": {{newCategory.response.body.$.id}}
+}
+
+### 4.4 Article details -> 200 (name is now "Test-Kabel HDMI 3m", bestand 0)
+GET {{baseUrl}}/api/articles/{{artQty.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 4.5 [Case 8] Quantity article: 10 pieces arrive in the Hauptlager -> 200
+POST {{baseUrl}}/api/articles/{{artQty.response.body.$.id}}/stock
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "menge": 10
+}
+
+### 4.6 [Case 7] Admin creates an article WITH serial number -> 201
+# @name artSerial
+POST {{baseUrl}}/api/articles
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": "Test-Notebook",
+  "serienNum": {{$randomInt 100000 999999}},
+  "kategorieId": {{newCategory.response.body.$.id}}
+}
+
+### 4.7 [Case 7] The device arrives in the Hauptlager (exactly 1 piece) -> 200
+POST {{baseUrl}}/api/articles/{{artSerial.response.body.$.id}}/stock
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "menge": 1
+}
+
+### 4.8 [Case 7] The same device a second time -> 409 (a serial number is ONE device)
+POST {{baseUrl}}/api/articles/{{artSerial.response.body.$.id}}/stock
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "menge": 1
+}
+
+### 4.9 [Case 7] Transfer of 2 pieces of a serial-number article -> 400
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "artikelId": {{artSerial.response.body.$.id}},
+  "menge": 2
+}
+
+### 4.10 [Case 13] Article without name and category -> 400
+POST {{baseUrl}}/api/articles
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "name": ""
+}
+
+### 4.11 Delete an article that has stock -> 409 (no stock or history may be lost)
+DELETE {{baseUrl}}/api/articles/{{artQty.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 4.12 Delete a category that is still used -> 409
+DELETE {{baseUrl}}/api/categories/{{newCategory.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+
+###############################################################################
+# 5. FULL PROCESS
+#    Hauptlager -> Ausgabe -> digitale Übernahme -> Labor -> Rückgabe
+#    -> Umbuchungslager -> Hauptlager
+#    Article: artQty (10 pieces in the Hauptlager)
+###############################################################################
+
+### 5.1 Stock before: Hauptlager has 10
+GET {{baseUrl}}/api/locations/{{adminRooms.response.body.$[0].id}}/inventory
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 5.2 [Case 11] Transfer of MORE than available -> 409 "Nicht genügend Bestand"
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "artikelId": {{artQty.response.body.$.id}},
+  "menge": 999
+}
+
+### 5.3 [Case 13] Transfer with Menge 0 -> 400
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "artikelId": {{artQty.response.body.$.id}},
+  "menge": 0
+}
+
+### 5.4 [Case 9] Admin hands out 4 pieces to Dennis' lab -> 201
+#       Hauptlager 10 -> 6 immediately (reserved). Labor still 0 until confirmed.
+# @name transfer
+POST {{baseUrl}}/api/transfers
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "artikelId": {{artQty.response.body.$.id}},
+  "menge": 4
+}
+
+### 5.5 [Case 9] Dennis sees the open transfer -> 200
+GET {{baseUrl}}/api/transfers/pending
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+### 5.6 Emily (not responsible) tries to confirm it -> 403
+POST {{baseUrl}}/api/transfers/{{transfer.response.body.$.id}}/confirm
+Authorization: Bearer {{loginEmily.response.body.$.token}}
+
+### 5.7 [Case 9] Dennis confirms the transfer -> 204. Labor 0 -> 4.
+POST {{baseUrl}}/api/transfers/{{transfer.response.body.$.id}}/confirm
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+### 5.8 [Case 12] Dennis confirms the SAME transfer again -> 409
+POST {{baseUrl}}/api/transfers/{{transfer.response.body.$.id}}/confirm
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+### 5.9 Stock in Dennis' lab: 4
+GET {{baseUrl}}/api/locations/{{dennisRooms.response.body.$[0].id}}/inventory
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+### 5.10 [Case 11] Dennis returns MORE than his lab has -> 409
+POST {{baseUrl}}/api/returns
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "artikelId": {{artQty.response.body.$.id}},
+  "menge": 50
+}
+
+### 5.11 Emily tries to return from Dennis' lab -> 403
+POST {{baseUrl}}/api/returns
+Authorization: Bearer {{loginEmily.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "artikelId": {{artQty.response.body.$.id}},
+  "menge": 1
+}
+
+### 5.12 [Case 10] Dennis returns 3 pieces -> 201. Labor 4 -> 1, Umbuchungslager +3.
+#        There is no field for the target: it is always the Umbuchungslager.
+# @name newReturn
+POST {{baseUrl}}/api/returns
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "artikelId": {{artQty.response.body.$.id}},
+  "menge": 3
+}
+
+### 5.13 Dennis may not see/accept open returns (admin function) -> 403
+GET {{baseUrl}}/api/returns/pending
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+### 5.14 [Case 10] Admin sees the open return -> 200
+GET {{baseUrl}}/api/returns/pending
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 5.15 Stock in the Umbuchungslager: 3
+GET {{baseUrl}}/api/locations/{{adminRooms.response.body.$[1].id}}/inventory
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 5.16 [Case 10] Admin accepts the return -> 204. Umbuchungslager -3, Hauptlager 6 -> 9.
+POST {{baseUrl}}/api/returns/{{newReturn.response.body.$.id}}/accept
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 5.17 Accept the same return again -> 409
+POST {{baseUrl}}/api/returns/{{newReturn.response.body.$.id}}/accept
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 5.18 Stock after: Hauptlager 9 (+ 1 in Dennis' lab = 10, nothing counted twice)
+GET {{baseUrl}}/api/locations/{{adminRooms.response.body.$[0].id}}/inventory
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+
+###############################################################################
+# 6. HISTORY
+###############################################################################
+
+### 6.1 [Case 14] Admin: full history of the test article
+#       Expected: Einbuchung, Rückgabe, Übernahme, Ausgabe, Zugang
+GET {{baseUrl}}/api/movements?artikelId={{artQty.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 6.2 [Case 14] Dennis: only movements of his own lab
+GET {{baseUrl}}/api/movements
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+### 6.3 Dennis filters the history by Emily's lab -> 403
+GET {{baseUrl}}/api/movements?raumId={{emilyRooms.response.body.$[0].id}}
+Authorization: Bearer {{loginDennis.response.body.$.token}}
+
+
+###############################################################################
+# 7. LOCATIONS AND TEACHER ASSIGNMENT (admin)
+###############################################################################
+
+### 7.1 All locations -> 200
+GET {{baseUrl}}/api/locations
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 7.2 Create a lab for the test user -> 201
+# @name newLab
+POST {{baseUrl}}/api/locations
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "raumTyp": "Labor",
+  "benutzerId": {{loginTest.response.body.$.userId}},
+  "raumNum": {{$randomInt 500 999}}
+}
+
+### 7.3 Change the room number -> 204
+PUT {{baseUrl}}/api/locations/{{newLab.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "raumNum": {{$randomInt 500 999}}
+}
+
+### 7.4 Assign Dennis to it, although he already has a lab -> 409 (one LehrerIn = one lab)
+PUT {{baseUrl}}/api/locations/{{newLab.response.body.$.id}}/teacher
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "benutzerId": {{loginDennis.response.body.$.userId}}
+}
+
+### 7.5 Assign the test user (again) -> 204
+PUT {{baseUrl}}/api/locations/{{newLab.response.body.$.id}}/teacher
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "benutzerId": {{loginTest.response.body.$.userId}}
+}
+
+### 7.6 Delete the Hauptlager -> 409
+DELETE {{baseUrl}}/api/locations/{{adminRooms.response.body.$[0].id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 7.7 Delete the empty new lab -> 204
+DELETE {{baseUrl}}/api/locations/{{newLab.response.body.$.id}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+
+###############################################################################
+# 8. USERS
+###############################################################################
+
+### 8.1 Admin: user list -> 200
+GET {{baseUrl}}/api/users
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 8.2 Admin changes a role to an unknown value -> 400
+PUT {{baseUrl}}/api/users/{{loginTest.response.body.$.userId}}/role
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "role": "Superuser"
+}
+
+### 8.3 Admin changes the role of the test user -> 204
+PUT {{baseUrl}}/api/users/{{loginTest.response.body.$.userId}}/role
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "role": "LehrerIn"
+}
+
+### 8.4 Admin deletes Dennis -> 409 (he has history and a lab)
+DELETE {{baseUrl}}/api/users/{{loginDennis.response.body.$.userId}}
+Authorization: Bearer {{loginAdmin.response.body.$.token}}
+
+### 8.5 Test user changes own data with a WRONG current password -> 400
+PUT {{baseUrl}}/api/users/me
+Authorization: Bearer {{loginTest.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "falsch",
+  "newUsername": "testlehrer2"
+}
+
+### 8.6 Test user changes own password (new salt) -> 204
+PUT {{baseUrl}}/api/users/me
+Authorization: Bearer {{loginTest.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "{{testPassword}}",
+  "newPassword": "{{testPassword}}"
+}
+
+### 8.7 Test user deletes own account (no history) -> 204
+DELETE {{baseUrl}}/api/users/me
+Authorization: Bearer {{loginTest.response.body.$.token}}
+
+### 8.8 The deleted user can't log in anymore -> 401
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "{{testUser}}",
+  "password": "{{testPassword}}"
+}
+
+
+###############################################################################
+# 9. LOGOUT
+###############################################################################
+
+### 9.1 Emily logs out -> 204
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{loginEmily.response.body.$.token}}
+
+### 9.2 Emily's token no longer works -> 401
+GET {{baseUrl}}/api/users/me
+Authorization: Bearer {{loginEmily.response.body.$.token}}
+
+### 9.3 Logout with the same token again -> 401
+POST {{baseUrl}}/api/auth/logout
+Authorization: Bearer {{loginEmily.response.body.$.token}}

@@ -4,19 +4,20 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+#nullable enable
+
 namespace Lagerverwaltung.Api.Models
 {
     public partial class spGetLocationInventoryResult
     {
         public int ArtikelId { get; set; }
         [StringLength(100)]
-        public string ArtikelName { get; set; }
+        public string ArtikelName { get; set; } = default!;
         public int? SerienNum { get; set; }
         [StringLength(100)]
-        public string KategorieName { get; set; }
-        public int? ModelNum { get; set; }
+        public string KategorieName { get; set; } = default!;
         [StringLength(50)]
-        public string HerstellerName { get; set; }
+        public string? HerstellerName { get; set; }
         public int Menge { get; set; }
     }
 }

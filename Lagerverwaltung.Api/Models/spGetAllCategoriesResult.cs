@@ -4,12 +4,15 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+#nullable enable
+
 namespace Lagerverwaltung.Api.Models
 {
     public partial class spGetAllCategoriesResult
     {
+        public int ID { get; set; }
         [StringLength(100)]
-        public string Name { get; set; }
+        public string Name { get; set; } = default!;
         public int? ModelNum { get; set; }
     }
 }

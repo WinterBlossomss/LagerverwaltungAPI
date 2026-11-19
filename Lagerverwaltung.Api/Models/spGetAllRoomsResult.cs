@@ -4,14 +4,20 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+#nullable enable
+
 namespace Lagerverwaltung.Api.Models
 {
     public partial class spGetAllRoomsResult
     {
+        public int ID { get; set; }
         [StringLength(20)]
-        public string Name { get; set; }
-        [StringLength(20)]
-        public string Username { get; set; }
+        public string RaumTyp { get; set; } = default!;
         public int? RaumNum { get; set; }
+        [StringLength(20)]
+        public string? Anzeigename { get; set; }
+        public int BenutzerId { get; set; }
+        [StringLength(20)]
+        public string Username { get; set; } = default!;
     }
 }

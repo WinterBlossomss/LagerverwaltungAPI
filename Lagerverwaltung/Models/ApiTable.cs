@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lagerverwaltung.Models;
 
-[Table("ApiTable")]
+[Table("ApiTokens")]   // the real table name in the database
 public partial class ApiTable
 {
     [Key]
@@ -17,11 +17,12 @@ public partial class ApiTable
     [MaxLength(32)]
     public byte[] TokenHash { get; set; }
 
-    public int? UserId { get; set; }
+    public int UserId { get; set; }
 
-    public DateTime? CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 
-    public DateTime? ExpiresAt { get; set; }
+    public DateTime ExpiresAt { get; set; }
 
-    public DateTime RevokedAt { get; set; }
+    // NULL = token still valid, a date = revoked (logout). See Database/Schemaanpassungen.sql
+    public DateTime? RevokedAt { get; set; }
 }

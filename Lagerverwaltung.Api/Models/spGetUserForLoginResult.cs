@@ -4,16 +4,18 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+#nullable enable
+
 namespace Lagerverwaltung.Api.Models
 {
     public partial class spGetUserForLoginResult
     {
         public int UserId { get; set; }
         [StringLength(20)]
-        public string Username { get; set; }
+        public string Username { get; set; } = default!;
         [StringLength(455)]
-        public string PasswordHash { get; set; }
+        public string PasswordHash { get; set; } = default!;
         [StringLength(20)]
-        public string RoleName { get; set; }
+        public string RoleName { get; set; } = default!;
     }
 }
