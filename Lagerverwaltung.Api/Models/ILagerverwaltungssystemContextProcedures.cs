@@ -17,6 +17,7 @@ namespace Lagerverwaltung.Api.Models
         Task<List<spAddStockResult>> spAddStockAsync(byte[]? tokenHash, int? artikelId, int? menge, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spAlterArtikelAsync(byte[]? tokenHash, int? id, string? name, int? serienNum, int? kategorieId, int? herstellerId, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spAlterCategoryAsync(byte[]? tokenHash, int? id, string? name, int? modelNum, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
+        Task<int> spAlterManufacturerAsync(byte[]? tokenHash, int? id, string? name, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spAlterRoomAsync(byte[]? tokenHash, int? id, int? raumNum, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spAlterUserRoleAsync(byte[]? tokenHash, int? userId, string? roleName, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spAssignTeacherToLabAsync(byte[]? tokenHash, int? raumId, int? benutzerId, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
@@ -25,15 +26,18 @@ namespace Lagerverwaltung.Api.Models
         Task<int> spCreateApiTokenAsync(int? userId, byte[]? tokenHash, DateTime? expiresAt, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<List<spCreateArtikelResult>> spCreateArtikelAsync(byte[]? tokenHash, string? name, int? serienNum, int? kategorieId, int? herstellerId, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<List<spCreateCategoryResult>> spCreateCategoryAsync(byte[]? tokenHash, string? name, int? modelNum, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
+        Task<List<spCreateManufacturerResult>> spCreateManufacturerAsync(byte[]? tokenHash, string? name, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<List<spCreateReturnResult>> spCreateReturnAsync(byte[]? tokenHash, int? laborId, int? artikelId, int? menge, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<List<spCreateRoomResult>> spCreateRoomAsync(byte[]? tokenHash, string? raumTyp, int? benutzerId, int? raumNum, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<List<spCreateTransferResult>> spCreateTransferAsync(byte[]? tokenHash, int? laborId, int? artikelId, int? menge, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spDeleteArtikelAsync(byte[]? tokenHash, int? id, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spDeleteCategoryAsync(byte[]? tokenHash, int? id, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
+        Task<int> spDeleteManufacturerAsync(byte[]? tokenHash, int? id, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spDeleteRoomAsync(byte[]? tokenHash, int? id, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<int> spDeleteUserAsync(byte[]? tokenHash, int? userId, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<List<spGetAllArtikelFilteredResult>> spGetAllArtikelFilteredAsync(byte[]? tokenHash, string? name, int? serienNum, int? kategorieId, int? herstellerId, int? raumId, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<List<spGetAllCategoriesResult>> spGetAllCategoriesAsync(byte[]? tokenHash, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
+        Task<List<spGetAllManufacturersResult>> spGetAllManufacturersAsync(byte[]? tokenHash, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<List<spGetAllMovementsResult>> spGetAllMovementsAsync(byte[]? tokenHash, int? raumId, int? artikelId, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<List<spGetAllRoomsResult>> spGetAllRoomsAsync(byte[]? tokenHash, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);
         Task<List<spGetAllUsersResult>> spGetAllUsersAsync(byte[]? tokenHash, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default);

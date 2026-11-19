@@ -27,7 +27,15 @@
          "ObjectType": 1
       },
       {
+         "Name": "[dbo].[spAlterArtikel]",
+         "ObjectType": 1
+      },
+      {
          "Name": "[dbo].[spAlterCategory]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spAlterManufacturer]",
          "ObjectType": 1
       },
       {
@@ -63,6 +71,10 @@
          "ObjectType": 1
       },
       {
+         "Name": "[dbo].[spCreateManufacturer]",
+         "ObjectType": 1
+      },
+      {
          "Name": "[dbo].[spCreateReturn]",
          "ObjectType": 1
       },
@@ -83,6 +95,10 @@
          "ObjectType": 1
       },
       {
+         "Name": "[dbo].[spDeleteManufacturer]",
+         "ObjectType": 1
+      },
+      {
          "Name": "[dbo].[spDeleteRoom]",
          "ObjectType": 1
       },
@@ -96,6 +112,10 @@
       },
       {
          "Name": "[dbo].[spGetAllCategories]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[spGetAllManufacturers]",
          "ObjectType": 1
       },
       {
@@ -144,10 +164,6 @@
       },
       {
          "Name": "[dbo].[spRegister]",
-         "ObjectType": 1
-      },
-      {
-         "Name": "[dbo].[spAlterArtikel]",
          "ObjectType": 1
       },
       {
