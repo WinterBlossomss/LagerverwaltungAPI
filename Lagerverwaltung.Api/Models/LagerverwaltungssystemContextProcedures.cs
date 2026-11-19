@@ -219,6 +219,46 @@ namespace Lagerverwaltung.Api.Models
             return _;
         }
 
+        public virtual async Task<int> spAlterManufacturerAsync(byte[]? tokenHash, int? id, string? name, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default)
+        {
+            var parameterreturnValue = new SqlParameter
+            {
+                ParameterName = "returnValue",
+                Direction = System.Data.ParameterDirection.Output,
+                SqlDbType = System.Data.SqlDbType.Int,
+            };
+
+            var sqlParameters = new []
+            {
+                new SqlParameter
+                {
+                    ParameterName = "TokenHash",
+                    Size = 32,
+                    Value = tokenHash ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.VarBinary,
+                },
+                new SqlParameter
+                {
+                    ParameterName = "Id",
+                    Value = id ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.Int,
+                },
+                new SqlParameter
+                {
+                    ParameterName = "Name",
+                    Size = 50,
+                    Value = name ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.NVarChar,
+                },
+                parameterreturnValue,
+            };
+            var _ = await _context.Database.ExecuteSqlRawAsync("EXEC @returnValue = [dbo].[spAlterManufacturer] @TokenHash = @TokenHash, @Id = @Id, @Name = @Name", sqlParameters, cancellationToken);
+
+            returnValue?.SetValue(parameterreturnValue.Value);
+
+            return _;
+        }
+
         public virtual async Task<int> spAlterRoomAsync(byte[]? tokenHash, int? id, int? raumNum, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default)
         {
             var parameterreturnValue = new SqlParameter
@@ -555,6 +595,40 @@ namespace Lagerverwaltung.Api.Models
             return _;
         }
 
+        public virtual async Task<List<spCreateManufacturerResult>> spCreateManufacturerAsync(byte[]? tokenHash, string? name, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default)
+        {
+            var parameterreturnValue = new SqlParameter
+            {
+                ParameterName = "returnValue",
+                Direction = System.Data.ParameterDirection.Output,
+                SqlDbType = System.Data.SqlDbType.Int,
+            };
+
+            var sqlParameters = new []
+            {
+                new SqlParameter
+                {
+                    ParameterName = "TokenHash",
+                    Size = 32,
+                    Value = tokenHash ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.VarBinary,
+                },
+                new SqlParameter
+                {
+                    ParameterName = "Name",
+                    Size = 50,
+                    Value = name ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.NVarChar,
+                },
+                parameterreturnValue,
+            };
+            var _ = await _context.SqlQueryAsync<spCreateManufacturerResult>("EXEC @returnValue = [dbo].[spCreateManufacturer] @TokenHash = @TokenHash, @Name = @Name", sqlParameters, cancellationToken);
+
+            returnValue?.SetValue(parameterreturnValue.Value);
+
+            return _;
+        }
+
         public virtual async Task<List<spCreateReturnResult>> spCreateReturnAsync(byte[]? tokenHash, int? laborId, int? artikelId, int? menge, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default)
         {
             var parameterreturnValue = new SqlParameter
@@ -757,6 +831,39 @@ namespace Lagerverwaltung.Api.Models
             return _;
         }
 
+        public virtual async Task<int> spDeleteManufacturerAsync(byte[]? tokenHash, int? id, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default)
+        {
+            var parameterreturnValue = new SqlParameter
+            {
+                ParameterName = "returnValue",
+                Direction = System.Data.ParameterDirection.Output,
+                SqlDbType = System.Data.SqlDbType.Int,
+            };
+
+            var sqlParameters = new []
+            {
+                new SqlParameter
+                {
+                    ParameterName = "TokenHash",
+                    Size = 32,
+                    Value = tokenHash ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.VarBinary,
+                },
+                new SqlParameter
+                {
+                    ParameterName = "Id",
+                    Value = id ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.Int,
+                },
+                parameterreturnValue,
+            };
+            var _ = await _context.Database.ExecuteSqlRawAsync("EXEC @returnValue = [dbo].[spDeleteManufacturer] @TokenHash = @TokenHash, @Id = @Id", sqlParameters, cancellationToken);
+
+            returnValue?.SetValue(parameterreturnValue.Value);
+
+            return _;
+        }
+
         public virtual async Task<int> spDeleteRoomAsync(byte[]? tokenHash, int? id, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default)
         {
             var parameterreturnValue = new SqlParameter
@@ -902,6 +1009,33 @@ namespace Lagerverwaltung.Api.Models
                 parameterreturnValue,
             };
             var _ = await _context.SqlQueryAsync<spGetAllCategoriesResult>("EXEC @returnValue = [dbo].[spGetAllCategories] @TokenHash = @TokenHash", sqlParameters, cancellationToken);
+
+            returnValue?.SetValue(parameterreturnValue.Value);
+
+            return _;
+        }
+
+        public virtual async Task<List<spGetAllManufacturersResult>> spGetAllManufacturersAsync(byte[]? tokenHash, OutputParameter<int>? returnValue = null, CancellationToken cancellationToken = default)
+        {
+            var parameterreturnValue = new SqlParameter
+            {
+                ParameterName = "returnValue",
+                Direction = System.Data.ParameterDirection.Output,
+                SqlDbType = System.Data.SqlDbType.Int,
+            };
+
+            var sqlParameters = new []
+            {
+                new SqlParameter
+                {
+                    ParameterName = "TokenHash",
+                    Size = 32,
+                    Value = tokenHash ?? Convert.DBNull,
+                    SqlDbType = System.Data.SqlDbType.VarBinary,
+                },
+                parameterreturnValue,
+            };
+            var _ = await _context.SqlQueryAsync<spGetAllManufacturersResult>("EXEC @returnValue = [dbo].[spGetAllManufacturers] @TokenHash = @TokenHash", sqlParameters, cancellationToken);
 
             returnValue?.SetValue(parameterreturnValue.Value);
 

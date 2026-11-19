@@ -6,6 +6,10 @@ namespace Lagerverwaltung.Api.DTOs
         [Required, StringLength(100, MinimumLength = 1)] string Name,
         int? ModelNum);
 
+    /// <summary>POST/PUT /api/manufacturers. Max. 50 characters, like the column Hersteller.Name.</summary>
+    public record ManufacturerRequest(
+        [Required, StringLength(50, MinimumLength = 1)] string Name);
+
     /// <summary>SerienNum = null: article is counted by quantity. With SerienNum: exactly one device.</summary>
     public record ArticleRequest(
         [Required, StringLength(100, MinimumLength = 1)] string Name,
