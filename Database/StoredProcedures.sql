@@ -810,12 +810,14 @@ BEGIN
 
     SELECT ID, RaumTyp, RaumNum, Anzeigename, BenutzerId, Username
     FROM   dbo.vRaum
-    ORDER BY RaumTypId, RaumNum;
+    ORDER BY CASE RaumTyp WHEN N'Hauptlager' THEN 1 WHEN N'Umbuchungslager' THEN 2 ELSE 3 END, RaumNum;
 END
 GO
 
 /* GET /api/locations/mine  (any logged-in user)
-   A LehrerIn needs her lab ID for inventory and returns. */
+   A LehrerIn needs her lab ID for inventory and returns.
+   Always sorted Hauptlager, Umbuchungslager, Labore, so the .http tests
+   can rely on [0] = Hauptlager and [1] = Umbuchungslager for the admin. */
 CREATE OR ALTER PROCEDURE dbo.spGetOwnRooms
     @TokenHash VARBINARY(32)
 AS
@@ -827,7 +829,7 @@ BEGIN
     SELECT ID, RaumTyp, RaumNum, Anzeigename, BenutzerId, Username
     FROM   dbo.vRaum
     WHERE  BenutzerId = @UserId
-    ORDER BY RaumTypId, RaumNum;
+    ORDER BY CASE RaumTyp WHEN N'Hauptlager' THEN 1 WHEN N'Umbuchungslager' THEN 2 ELSE 3 END, RaumNum;
 END
 GO
 

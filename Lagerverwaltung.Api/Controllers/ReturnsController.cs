@@ -1,4 +1,4 @@
-using Lagerverwaltung.Api.DTOs;
+﻿using Lagerverwaltung.Api.DTOs;
 using Lagerverwaltung.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,21 +18,27 @@ namespace Lagerverwaltung.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] MovementRequest request)
         {
-            var result = await Db.spCreateReturnAsync(TokenHash, request.LaborId, request.ArtikelId, request.Menge);
-            int id = result.Single().NewId!.Value;
-            return Created($"/api/returns/{id}", new CreatedResponse(id));
+            return await Run(async () =>
+            {
+                var result = await Db.spCreateReturnAsync(TokenHash, request.LaborId, request.ArtikelId, request.Menge);
+                int id = result.Single().NewId!.Value;
+                return Created($"/api/returns/{id}", new CreatedResponse(id));
+            });
         }
 
         /// <summary>GET /api/returns/pending  (Administrator)</summary>
         [HttpGet("pending")]
-        public async Task<IActionResult> GetPending() => Ok(await Db.spGetPendingReturnsAsync(TokenHash));
+        public async Task<IActionResult> GetPending() => await Run(async () => Ok(await Db.spGetPendingReturnsAsync(TokenHash)));
 
         /// <summary>POST /api/returns/{id}/accept  (Administrator): Umbuchungslager -> Hauptlager, return closed.</summary>
         [HttpPost("{id:int}/accept")]
         public async Task<IActionResult> Accept(int id)
         {
-            await Db.spAcceptReturnAsync(TokenHash, id);
-            return NoContent();
+            return await Run(async () =>
+            {
+                await Db.spAcceptReturnAsync(TokenHash, id);
+                return NoContent();
+            });
         }
     }
 }

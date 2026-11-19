@@ -1,4 +1,4 @@
-using Lagerverwaltung.Api.Models;
+﻿using Lagerverwaltung.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lagerverwaltung.Api.Controllers
@@ -15,6 +15,6 @@ namespace Lagerverwaltung.Api.Controllers
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] int? raumId, [FromQuery] int? artikelId)
-            => Ok(await Db.spGetAllMovementsAsync(TokenHash, raumId, artikelId));
+            => await Run(async () => Ok(await Db.spGetAllMovementsAsync(TokenHash, raumId, artikelId)));
     }
 }

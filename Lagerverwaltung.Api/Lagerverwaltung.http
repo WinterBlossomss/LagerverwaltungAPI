@@ -55,13 +55,13 @@ Content-Type: application/json
   "password": "123"
 }
 
-### 1.3 Registration tries to make itself admin -> the "role" field is ignored, user is LehrerIn
-#       (Run 1.4 and check "role" in the response. Second run gives 409.)
+### 1.3 Registration tries to make itself admin -> 201, the "role" field is ignored, user is LehrerIn
+#       Check "role" in the response: it is "LehrerIn". The random name makes the test repeatable.
 POST {{baseUrl}}/api/auth/register
 Content-Type: application/json
 
 {
-  "username": "hacker",
+  "username": "hacker{{$randomInt 10000 99999}}",
   "password": "{{testPassword}}",
   "role": "Administrator",
   "rolle": 1

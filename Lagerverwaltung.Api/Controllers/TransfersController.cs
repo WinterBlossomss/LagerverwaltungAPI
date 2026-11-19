@@ -1,4 +1,4 @@
-using Lagerverwaltung.Api.DTOs;
+﻿using Lagerverwaltung.Api.DTOs;
 using Lagerverwaltung.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,14 +18,17 @@ namespace Lagerverwaltung.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] MovementRequest request)
         {
-            var result = await Db.spCreateTransferAsync(TokenHash, request.LaborId, request.ArtikelId, request.Menge);
-            int id = result.Single().NewId!.Value;
-            return Created($"/api/transfers/{id}", new CreatedResponse(id));
+            return await Run(async () =>
+            {
+                var result = await Db.spCreateTransferAsync(TokenHash, request.LaborId, request.ArtikelId, request.Menge);
+                int id = result.Single().NewId!.Value;
+                return Created($"/api/transfers/{id}", new CreatedResponse(id));
+            });
         }
 
         /// <summary>GET /api/transfers/pending  (Administrator: all; LehrerIn: only for her labs)</summary>
         [HttpGet("pending")]
-        public async Task<IActionResult> GetPending() => Ok(await Db.spGetPendingTransfersAsync(TokenHash));
+        public async Task<IActionResult> GetPending() => await Run(async () => Ok(await Db.spGetPendingTransfersAsync(TokenHash)));
 
         /// <summary>
         /// POST /api/transfers/{id}/confirm  (only the responsible LehrerIn)
@@ -34,8 +37,11 @@ namespace Lagerverwaltung.Api.Controllers
         [HttpPost("{id:int}/confirm")]
         public async Task<IActionResult> Confirm(int id)
         {
-            await Db.spConfirmTransferAsync(TokenHash, id);
-            return NoContent();
+            return await Run(async () =>
+            {
+                await Db.spConfirmTransferAsync(TokenHash, id);
+                return NoContent();
+            });
         }
     }
 }

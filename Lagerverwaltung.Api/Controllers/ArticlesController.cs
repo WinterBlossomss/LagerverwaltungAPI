@@ -1,4 +1,4 @@
-using Lagerverwaltung.Api.DTOs;
+﻿using Lagerverwaltung.Api.DTOs;
 using Lagerverwaltung.Api.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -17,44 +17,59 @@ namespace Lagerverwaltung.Api.Controllers
         [HttpGet]
         public async Task<IActionResult> Search([FromQuery] ArticleFilter filter)
         {
-            var articles = await Db.spGetAllArtikelFilteredAsync(
-                TokenHash, filter.Name, filter.SerienNum, filter.KategorieId, filter.HerstellerId, filter.RaumId);
-            return Ok(articles);
+            return await Run(async () =>
+            {
+                var articles = await Db.spGetAllArtikelFilteredAsync(
+                    TokenHash, filter.Name, filter.SerienNum, filter.KategorieId, filter.HerstellerId, filter.RaumId);
+                return Ok(articles);
+            });
         }
 
         /// <summary>GET /api/articles/{id}  (logged in)</summary>
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var article = (await Db.spGetArtikelByIdAsync(TokenHash, id)).Single();
-            return Ok(article);
+            return await Run(async () =>
+            {
+                var article = (await Db.spGetArtikelByIdAsync(TokenHash, id)).Single();
+                return Ok(article);
+            });
         }
 
         /// <summary>POST /api/articles  (Administrator). Creates the article with stock 0.</summary>
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ArticleRequest request)
         {
-            var result = await Db.spCreateArtikelAsync(
-                TokenHash, request.Name.Trim(), request.SerienNum, request.KategorieId, request.HerstellerId);
-            int id = result.Single().NewId!.Value;
-            return Created($"/api/articles/{id}", new CreatedResponse(id));
+            return await Run(async () =>
+            {
+                var result = await Db.spCreateArtikelAsync(
+                    TokenHash, request.Name.Trim(), request.SerienNum, request.KategorieId, request.HerstellerId);
+                int id = result.Single().NewId!.Value;
+                return Created($"/api/articles/{id}", new CreatedResponse(id));
+            });
         }
 
         /// <summary>PUT /api/articles/{id}  (Administrator)</summary>
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] ArticleRequest request)
         {
-            await Db.spAlterArtikelAsync(
-                TokenHash, id, request.Name.Trim(), request.SerienNum, request.KategorieId, request.HerstellerId);
-            return NoContent();
+            return await Run(async () =>
+            {
+                await Db.spAlterArtikelAsync(
+                    TokenHash, id, request.Name.Trim(), request.SerienNum, request.KategorieId, request.HerstellerId);
+                return NoContent();
+            });
         }
 
         /// <summary>DELETE /api/articles/{id}  (Administrator). 409 if it has stock or history.</summary>
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await Db.spDeleteArtikelAsync(TokenHash, id);
-            return NoContent();
+            return await Run(async () =>
+            {
+                await Db.spDeleteArtikelAsync(TokenHash, id);
+                return NoContent();
+            });
         }
 
         /// <summary>
@@ -64,8 +79,11 @@ namespace Lagerverwaltung.Api.Controllers
         [HttpPost("{id:int}/stock")]
         public async Task<IActionResult> AddStock(int id, [FromBody] AddStockRequest request)
         {
-            var result = await Db.spAddStockAsync(TokenHash, id, request.Menge);
-            return Ok(new { movementId = result.Single().NewId });
+            return await Run(async () =>
+            {
+                var result = await Db.spAddStockAsync(TokenHash, id, request.Menge);
+                return Ok(new { movementId = result.Single().NewId });
+            });
         }
     }
 }
