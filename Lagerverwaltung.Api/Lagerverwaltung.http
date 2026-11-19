@@ -1,39 +1,9 @@
-###############################################################################
-# Lagerverwaltung.http  -  API tests for Visual Studio 2026
-#
-# HOW TO USE
-# 1. Database: run Database/Schemaanpassungen.sql once, then Database/StoredProcedures.sql.
-# 2. Pepper: the API shares the User Secrets of the MVC app (same UserSecretsId),
-#    so if the MVC app already runs, nothing to do. Otherwise, in Lagerverwaltung.Api:
-#        dotnet user-secrets set "Security:Pepper" "<your secret>"
-# 3. Start the MVC app ONCE: its SeedService creates the test users and upgrades their
-#    password hashes to the PBKDF2 format that the API understands.
-# 4. Start Lagerverwaltung.Api with the "https" profile.
-# 5. Run the requests from top to bottom ("Send Request" above each ###).
-#
-# TOKENS
-# Requests with "# @name xyz" store their response. Later requests read values from it,
-# e.g. {{loginAdmin.response.body.$.token}}. So after the login requests you don't need to
-# copy any token by hand. (Manual alternative: copy "token" from the login response into
-# the @token variable below and use Authorization: Bearer {{token}}.)
-#
-# Test users come from the MVC SeedService (development only, placeholders, not real passwords):
-#   ADMIN / Admin123!     Administrator
-#   Dennis / 123          LehrerIn, Labor 309
-#   Emily / 123           LehrerIn, Labor 310
-# No real passwords, tokens or pepper values belong in this file.
-###############################################################################
-
 @baseUrl = https://localhost:7154
 @token = TOKEN_HIER_EINTRAGEN_FALLS_MANUELL
 @testUser = testlehrer
 @testPassword = TESTPASSWORT_123
-
-
-
-###############################################################################
-# 1. REGISTRATION AND LOGIN
-###############################################################################
+@dennisRoomId = 4
+################### 1.LOGIN ######################
 
 ### 1.1 [Case 1] Register a new user -> 201 (role is always LehrerIn)
 #       Running it a second time gives 409 "Benutzername ist bereits vergeben" (also correct).
@@ -134,10 +104,7 @@ Content-Type: application/json
   "password": "123"
 }
 
-
-###############################################################################
-# 2. AUTHENTICATION AND PERMISSIONS
-###############################################################################
+################### 2.AUTHENTIFICATION AND PERMISSIONS ######################
 
 ### 2.1 [Case 3] Protected endpoint WITHOUT token -> 401
 GET {{baseUrl}}/api/users/me
@@ -158,9 +125,8 @@ Authorization: Bearer {{loginDennis.response.body.$.token}}
 POST {{baseUrl}}/api/categories
 Authorization: Bearer {{loginDennis.response.body.$.token}}
 Content-Type: application/json
-
 {
-  "name": "Darf ich nicht"
+  "name": "DarfNicht"
 }
 
 ### 2.6 Rooms of Dennis (his Labor ID is used below)
@@ -179,27 +145,25 @@ GET {{baseUrl}}/api/locations/mine
 Authorization: Bearer {{loginAdmin.response.body.$.token}}
 
 ### 2.9 Dennis looks at his OWN lab -> 200
-GET {{baseUrl}}/api/locations/{{dennisRooms.response.body.$[0].id}}/inventory
+GET {{baseUrl}}/api/locations/{{dennisRooms.response.body.$.items[0].id}}/inventory
 Authorization: Bearer {{loginDennis.response.body.$.token}}
 
 ### 2.10 [Case 5] Dennis looks at Emily's lab -> 403
-GET {{baseUrl}}/api/locations/{{emilyRooms.response.body.$[0].id}}/inventory
+GET {{baseUrl}}/api/locations/{{emilyRooms.response.body.$.items[0].id}}/inventory
 Authorization: Bearer {{loginDennis.response.body.$.token}}
 
 ### 2.11 [Case 5] Dennis filters articles by Emily's lab -> 403
-GET {{baseUrl}}/api/articles?raumId={{emilyRooms.response.body.$[0].id}}
+GET {{baseUrl}}/api/articles?raumId={{emilyRooms.response.body.$.items[0].id}}
 Authorization: Bearer {{loginDennis.response.body.$.token}}
 
 
-###############################################################################
-# 3. CATEGORIES
-###############################################################################
+################### 3.CATEGORIES ######################
 
 ### 3.1 All categories (any logged-in user) -> 200
 GET {{baseUrl}}/api/categories
 Authorization: Bearer {{loginDennis.response.body.$.token}}
 
-### 3.2 Create a category (admin) -> 201
+### 3.2 Create a category (admin) -> 200
 # @name newCategory
 POST {{baseUrl}}/api/categories
 Authorization: Bearer {{loginAdmin.response.body.$.token}}
@@ -238,10 +202,7 @@ Content-Type: application/json
   "name": "Gibt es nicht"
 }
 
-
-###############################################################################
-# 4. ARTICLES
-###############################################################################
+################### 4.ARTIKEL ######################
 
 ### 4.1 Search with filters (name, category, ...) -> 200
 GET {{baseUrl}}/api/articles?name=a
@@ -319,7 +280,7 @@ Authorization: Bearer {{loginAdmin.response.body.$.token}}
 Content-Type: application/json
 
 {
-  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "laborId": {{dennisRooms.response.body.$.items[0].id}},
   "artikelId": {{artSerial.response.body.$.id}},
   "menge": 2
 }
@@ -341,16 +302,10 @@ Authorization: Bearer {{loginAdmin.response.body.$.token}}
 DELETE {{baseUrl}}/api/categories/{{newCategory.response.body.$.id}}
 Authorization: Bearer {{loginAdmin.response.body.$.token}}
 
-
-###############################################################################
-# 5. FULL PROCESS
-#    Hauptlager -> Ausgabe -> digitale Übernahme -> Labor -> Rückgabe
-#    -> Umbuchungslager -> Hauptlager
-#    Article: artQty (10 pieces in the Hauptlager)
-###############################################################################
+################### 5. FULL PROCESS ######################
 
 ### 5.1 Stock before: Hauptlager has 10
-GET {{baseUrl}}/api/locations/{{adminRooms.response.body.$[0].id}}/inventory
+GET {{baseUrl}}/api/locations/{{adminRooms.response.body.$.items[0].id}}/inventory
 Authorization: Bearer {{loginAdmin.response.body.$.token}}
 
 ### 5.2 [Case 11] Transfer of MORE than available -> 409 "Nicht genügend Bestand"
@@ -359,7 +314,7 @@ Authorization: Bearer {{loginAdmin.response.body.$.token}}
 Content-Type: application/json
 
 {
-  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "laborId": {{dennisRooms.response.body.$.items[0].id}},
   "artikelId": {{artQty.response.body.$.id}},
   "menge": 999
 }
@@ -370,7 +325,7 @@ Authorization: Bearer {{loginAdmin.response.body.$.token}}
 Content-Type: application/json
 
 {
-  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "laborId": {{dennisRooms.response.body.$.items[0].id}},
   "artikelId": {{artQty.response.body.$.id}},
   "menge": 0
 }
@@ -383,7 +338,7 @@ Authorization: Bearer {{loginAdmin.response.body.$.token}}
 Content-Type: application/json
 
 {
-  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "laborId": {{dennisRooms.response.body.$.items[0].id}},
   "artikelId": {{artQty.response.body.$.id}},
   "menge": 4
 }
@@ -405,7 +360,7 @@ POST {{baseUrl}}/api/transfers/{{transfer.response.body.$.id}}/confirm
 Authorization: Bearer {{loginDennis.response.body.$.token}}
 
 ### 5.9 Stock in Dennis' lab: 4
-GET {{baseUrl}}/api/locations/{{dennisRooms.response.body.$[0].id}}/inventory
+GET {{baseUrl}}/api/locations/{{dennisRooms.response.body.$.items[0].id}}/inventory
 Authorization: Bearer {{loginDennis.response.body.$.token}}
 
 ### 5.10 [Case 11] Dennis returns MORE than his lab has -> 409
@@ -414,7 +369,7 @@ Authorization: Bearer {{loginDennis.response.body.$.token}}
 Content-Type: application/json
 
 {
-  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "laborId": {{dennisRooms.response.body.$.items[0].id}},
   "artikelId": {{artQty.response.body.$.id}},
   "menge": 50
 }
@@ -425,7 +380,7 @@ Authorization: Bearer {{loginEmily.response.body.$.token}}
 Content-Type: application/json
 
 {
-  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "laborId": {{dennisRooms.response.body.$.items[0].id}},
   "artikelId": {{artQty.response.body.$.id}},
   "menge": 1
 }
@@ -438,7 +393,7 @@ Authorization: Bearer {{loginDennis.response.body.$.token}}
 Content-Type: application/json
 
 {
-  "laborId": {{dennisRooms.response.body.$[0].id}},
+  "laborId": {{dennisRooms.response.body.$.items[0].id}},
   "artikelId": {{artQty.response.body.$.id}},
   "menge": 3
 }
@@ -452,7 +407,7 @@ GET {{baseUrl}}/api/returns/pending
 Authorization: Bearer {{loginAdmin.response.body.$.token}}
 
 ### 5.15 Stock in the Umbuchungslager: 3
-GET {{baseUrl}}/api/locations/{{adminRooms.response.body.$[1].id}}/inventory
+GET {{baseUrl}}/api/locations/{{adminRooms.response.body.$.items[1].id}}/inventory
 Authorization: Bearer {{loginAdmin.response.body.$.token}}
 
 ### 5.16 [Case 10] Admin accepts the return -> 204. Umbuchungslager -3, Hauptlager 6 -> 9.
@@ -464,13 +419,10 @@ POST {{baseUrl}}/api/returns/{{newReturn.response.body.$.id}}/accept
 Authorization: Bearer {{loginAdmin.response.body.$.token}}
 
 ### 5.18 Stock after: Hauptlager 9 (+ 1 in Dennis' lab = 10, nothing counted twice)
-GET {{baseUrl}}/api/locations/{{adminRooms.response.body.$[0].id}}/inventory
+GET {{baseUrl}}/api/locations/{{adminRooms.response.body.$.items[0].id}}/inventory
 Authorization: Bearer {{loginAdmin.response.body.$.token}}
 
-
-###############################################################################
-# 6. HISTORY
-###############################################################################
+################### 6. HISTORY ######################
 
 ### 6.1 [Case 14] Admin: full history of the test article
 #       Expected: Einbuchung, Rückgabe, Übernahme, Ausgabe, Zugang
@@ -482,13 +434,10 @@ GET {{baseUrl}}/api/movements
 Authorization: Bearer {{loginDennis.response.body.$.token}}
 
 ### 6.3 Dennis filters the history by Emily's lab -> 403
-GET {{baseUrl}}/api/movements?raumId={{emilyRooms.response.body.$[0].id}}
+GET {{baseUrl}}/api/movements?raumId={{emilyRooms.response.body.$.items[0].id}}
 Authorization: Bearer {{loginDennis.response.body.$.token}}
 
-
-###############################################################################
-# 7. LOCATIONS AND TEACHER ASSIGNMENT (admin)
-###############################################################################
+################### 7. LOCATION ######################
 
 ### 7.1 All locations -> 200
 GET {{baseUrl}}/api/locations
@@ -534,19 +483,16 @@ Content-Type: application/json
 }
 
 ### 7.6 Delete the Hauptlager -> 409
-DELETE {{baseUrl}}/api/locations/{{adminRooms.response.body.$[0].id}}
+DELETE {{baseUrl}}/api/locations/{{adminRooms.response.body.$.items[0].id}}
 Authorization: Bearer {{loginAdmin.response.body.$.token}}
 
 ### 7.7 Delete the empty new lab -> 204
 DELETE {{baseUrl}}/api/locations/{{newLab.response.body.$.id}}
 Authorization: Bearer {{loginAdmin.response.body.$.token}}
 
+################### 8. USERS ######################
 
-###############################################################################
-# 8. USERS
-###############################################################################
-
-### 8.1 Admin: user list -> 200
+## 8.1 Admin: user list -> 200
 GET {{baseUrl}}/api/users
 Authorization: Bearer {{loginAdmin.response.body.$.token}}
 
@@ -605,10 +551,7 @@ Content-Type: application/json
   "password": "{{testPassword}}"
 }
 
-
-###############################################################################
-# 9. LOGOUT
-###############################################################################
+################### 9. LOGOUT ######################
 
 ### 9.1 Emily logs out -> 204
 POST {{baseUrl}}/api/auth/logout
