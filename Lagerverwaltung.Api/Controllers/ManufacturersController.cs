@@ -10,11 +10,18 @@ namespace Lagerverwaltung.Api.Controllers
     {
         public ManufacturersController(LagerverwaltungssystemContext context) : base(context) { }
 
-        /// <summary>GET /api/manufacturers  (logged in)</summary>
+        /// <summary>
+        /// Gets all manufacturers.
+        /// </summary>
+        /// <returns>An <c>IActionResult</c> containing the manufacturers.</returns>
         [HttpGet]
         public async Task<IActionResult> GetAll() => await Run(async () => Ok(await Db.spGetAllManufacturersAsync(TokenHash)));
 
-        /// <summary>POST /api/manufacturers  (Administrator)</summary>
+        /// <summary>
+        /// Creates a manufacturer.
+        /// </summary>
+        /// <param name="request">The manufacturer details.</param>
+        /// <returns>A created response containing the new manufacturer identifier.</returns>
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] ManufacturerRequest request)
         {
@@ -26,7 +33,12 @@ namespace Lagerverwaltung.Api.Controllers
             });
         }
 
-        /// <summary>PUT /api/manufacturers/{id}  (Administrator)</summary>
+        /// <summary>
+        /// Updates the manufacturer with the specified identifier.
+        /// </summary>
+        /// <param name="id">The identifier of the manufacturer to update.</param>
+        /// <param name="request">The manufacturer details to apply.</param>
+        /// <returns>A task that represents the asynchronous operation and contains an <see cref="IActionResult"/>.</returns>
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] ManufacturerRequest request)
         {
@@ -37,7 +49,11 @@ namespace Lagerverwaltung.Api.Controllers
             });
         }
 
-        /// <summary>DELETE /api/manufacturers/{id}  (Administrator). 409 while articles use it.</summary>
+        /// <summary>
+        /// Deletes the manufacturer with the specified identifier.
+        /// </summary>
+        /// <param name="id">The identifier of the manufacturer to delete.</param>
+        /// <returns>An <see cref="IActionResult"/> that contains a no-content response when the manufacturer is deleted.</returns>
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
