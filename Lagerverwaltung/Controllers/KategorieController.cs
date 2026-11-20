@@ -1,57 +1,59 @@
 using Lagerverwaltung.Models;
 using Lagerverwaltung.Services;
+using Lagerverwaltung.Services.Api;
 using Lagerverwaltung.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 
 namespace Lagerverwaltung.Controllers
 {
     [Authorize(Roles = Rollen.Admin)]
     public class KategorieController : Controller
     {
-        private readonly LagerverwaltungssystemContext _context;
+        private readonly ApiClient _api;
 
-        public KategorieController(LagerverwaltungssystemContext context)
+        public KategorieController(ApiClient api)
         {
-            _context = context;
+            _api = api;
         }
 
         public async Task<IActionResult> Index(KategorieListeViewModel vm)
         {
-            var q = _context.Kategories.AsQueryable();
+            var kategorien = await _api.GetCategoriesAsync();
             if (!string.IsNullOrWhiteSpace(vm.Suche))
             {
                 var s = vm.Suche.Trim();
-                q = q.Where(k => k.Name.Contains(s) || (k.ModelNum != null && k.ModelNum.ToString()!.Contains(s)));
+                kategorien = kategorien.Where(k => k.Name.Contains(s, StringComparison.OrdinalIgnoreCase)
+                    || (k.ModelNum?.ToString().Contains(s) ?? false)).ToList();
             }
 
-            vm.Kategorien = await q
+            // Number of articles per category, counted from the article list
+            var anzahl = (await _api.GetArticlesAsync()).GroupBy(a => a.KategorieId).ToDictionary(g => g.Key, g => g.Count());
+
+            vm.Kategorien = kategorien
                 .OrderBy(k => k.Name)
                 .Select(k => new KategorieZeile
                 {
-                    ID = k.ID,
+                    ID = k.Id,
                     Name = k.Name,
                     ModelNum = k.ModelNum,
-                    AnzahlArtikel = k.Artikels.Count()
+                    AnzahlArtikel = anzahl.GetValueOrDefault(k.Id)
                 })
-                .ToListAsync();
+                .ToList();
             return View(vm);
         }
 
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
-            var kategorie = await _context.Kategories
-                .Include(k => k.Artikels).ThenInclude(a => a.HerstellerNavigation)
-                .FirstOrDefaultAsync(k => k.ID == id);
+            var kategorie = await FindeAsync(id.Value);
             if (kategorie == null) return NotFound();
 
+            var artikel = await _api.GetArticlesAsync(kategorieId: id);
             return View(new KategorieDetailsViewModel
             {
                 Kategorie = kategorie,
-                Artikel = kategorie.Artikels.OrderBy(a => a.Name).ThenBy(a => a.SerienNum).ToList()
+                Artikel = artikel.OrderBy(a => a.Name).ThenBy(a => a.SerienNum).Select(LagerService.ToArtikel).ToList()
             });
         }
 
@@ -62,14 +64,19 @@ namespace Lagerverwaltung.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(KategorieFormViewModel vm)
         {
-            await ValidiereAsync(vm);
             if (!ModelState.IsValid) return View(vm);
 
-            var kategorie = new Kategorie { Name = vm.Name.Trim(), ModelNum = vm.ModelNum };
-            _context.Kategories.Add(kategorie);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _api.CreateCategoryAsync(vm.Name.Trim(), vm.ModelNum);
+            }
+            catch (ApiException ex) when (ex.IsUserError)
+            {
+                ModelState.AddModelError(ex.IsConflict ? nameof(vm.Name) : "", ex.Message);   // 409: name already exists
+                return View(vm);
+            }
 
-            TempData["Meldung"] = $"Kategorie '{kategorie.Name}' wurde angelegt.";
+            TempData["Meldung"] = $"Kategorie '{vm.Name.Trim()}' wurde angelegt.";
             if (Url.IsLocalUrl(vm.ReturnUrl)) return Redirect(vm.ReturnUrl);
             return RedirectToAction(nameof(Index));
         }
@@ -77,7 +84,7 @@ namespace Lagerverwaltung.Controllers
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
-            var kategorie = await _context.Kategories.FindAsync(id);
+            var kategorie = await FindeAsync(id.Value);
             if (kategorie == null) return NotFound();
 
             return View(new KategorieFormViewModel
@@ -93,15 +100,17 @@ namespace Lagerverwaltung.Controllers
         public async Task<IActionResult> Edit(int id, KategorieFormViewModel vm)
         {
             if (id != vm.ID) return NotFound();
-            var kategorie = await _context.Kategories.FindAsync(id);
-            if (kategorie == null) return NotFound();
-
-            await ValidiereAsync(vm);
             if (!ModelState.IsValid) return View(vm);
 
-            kategorie.Name = vm.Name.Trim();
-            kategorie.ModelNum = vm.ModelNum;
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _api.UpdateCategoryAsync(id, vm.Name.Trim(), vm.ModelNum);
+            }
+            catch (ApiException ex) when (ex.IsUserError && !ex.IsNotFound)
+            {
+                ModelState.AddModelError(ex.IsConflict ? nameof(vm.Name) : "", ex.Message);
+                return View(vm);
+            }
 
             TempData["Meldung"] = "Änderungen gespeichert.";
             return RedirectToAction(nameof(Details), new { id });
@@ -113,27 +122,28 @@ namespace Lagerverwaltung.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var kategorie = await _context.Kategories.FindAsync(id);
+            var kategorie = await FindeAsync(id);
             if (kategorie == null) return NotFound();
 
-            if (await _context.Artikels.AnyAsync(a => a.Kategorie == id))
+            try
             {
-                TempData["Fehler"] = "Die Kategorie enthält noch Artikel und kann nicht gelöscht werden.";
+                await _api.DeleteCategoryAsync(id);
+            }
+            catch (ApiException ex) when (ex.IsConflict)
+            {
+                TempData["Fehler"] = ex.Message;   // "Kategorie wird noch von Artikeln verwendet."
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            _context.Kategories.Remove(kategorie);
-            await _context.SaveChangesAsync();
             TempData["Meldung"] = $"Kategorie '{kategorie.Name}' wurde gelöscht.";
             return RedirectToAction(nameof(Index));
         }
 
-        /// <summary>Kategorie-Namen müssen eindeutig sein.</summary>
-        private async Task ValidiereAsync(KategorieFormViewModel vm)
+        /// <summary>The API has no GET /api/categories/{id}, so the category is taken from the list.</summary>
+        private async Task<Kategorie?> FindeAsync(int id)
         {
-            if (!string.IsNullOrWhiteSpace(vm.Name) &&
-                await _context.Kategories.AnyAsync(k => k.Name == vm.Name.Trim() && k.ID != vm.ID))
-                ModelState.AddModelError(nameof(vm.Name), "Diese Kategorie existiert bereits.");
+            var k = (await _api.GetCategoriesAsync()).FirstOrDefault(k => k.Id == id);
+            return k == null ? null : new Kategorie { ID = k.Id, Name = k.Name, ModelNum = k.ModelNum };
         }
     }
 }

@@ -1,24 +1,22 @@
-﻿using Lagerverwaltung.Models;
+﻿using Lagerverwaltung.Services.Api;
 using Lagerverwaltung.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Lagerverwaltung.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly LagerverwaltungssystemContext _db;
-        private readonly IPasswordHasher<Benutzer> _passwordHasher;
+        private readonly ApiClient _api;
+        private readonly ILogger<AccountController> _logger;
 
-        public AccountController(LagerverwaltungssystemContext db, IPasswordHasher<Benutzer> passwordHasher)
+        public AccountController(ApiClient api, ILogger<AccountController> logger)
         {
-            _db = db;
-            _passwordHasher = passwordHasher;
+            _api = api;
+            _logger = logger;
         }
 
         //Difference between the two methods is that the first one is a GET method that returns the login view,
@@ -35,11 +33,17 @@ namespace Lagerverwaltung.Controllers
         {
             if (User.Identity?.IsAuthenticated == true) return RedirectToAction("Index", "Dashboard");
             ViewData["ReturnUrl"] = returnUrl;
+
+            // e.g. "Ihre Sitzung ist abgelaufen" after the API answered 401 (ApiExceptionFilter)
+            if (TempData["Fehler"] is string fehler)
+                ModelState.AddModelError("", fehler);
+
             return View(new LoginViewModel());
         }
 
         /// <summary>
-        /// Login
+        /// Login: POST /api/auth/login. The API checks the password and returns a bearer token.
+        /// The token is stored as a claim in the (encrypted, HttpOnly) authentication cookie.
         /// </summary>
         /// <param name="model">The login view model.</param>
         /// <param name="returnUrl">The URL to redirect to after login.</param>
@@ -52,43 +56,42 @@ namespace Lagerverwaltung.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            //Checks if User in DB
-            var benutzer = await _db.Benutzers
-                .Include(b => b.RolleNavigation)
-                .FirstOrDefaultAsync(b => b.Username == model.Username);
-
-            //Checks if User is null or Password is incorrect
-            var check = benutzer == null
-                ? PasswordVerificationResult.Failed
-                : _passwordHasher.VerifyHashedPassword(benutzer, benutzer.Password, model.Password);
-
-            if (benutzer == null || check == PasswordVerificationResult.Failed)
+            LoginResponse login;
+            try
+            {
+                login = await _api.LoginAsync(model.Username.Trim(), model.Password);
+            }
+            catch (ApiException ex) when (ex.IsUnauthorized || ex.StatusCode == 400)
             {
                 ModelState.AddModelError("", "Benutzername oder Passwort falsch");
                 return View(model);
             }
-
-            // Old Block 1 hash: store it again in the new PBKDF2 format (shared with the REST API).
-            if (check == PasswordVerificationResult.SuccessRehashNeeded)
+            catch (HttpRequestException ex)
             {
-                benutzer.Password = _passwordHasher.HashPassword(benutzer, model.Password);
-                await _db.SaveChangesAsync();
+                _logger.LogError(ex, "REST API not reachable");
+                ModelState.AddModelError("", "Die REST-API ist nicht erreichbar. Bitte zuerst Lagerverwaltung.Api starten.");
+                return View(model);
             }
 
-            // Create claims for the authenticated user
+            // Create claims for the authenticated user (who, role, and the API token)
             var claims = new List<Claim>
             {
-                new(ClaimTypes.NameIdentifier, benutzer.ID.ToString()),
-                new(ClaimTypes.Name, benutzer.Username),
-                new(ClaimTypes.Role, benutzer.RolleNavigation.Name)
+                new(ClaimTypes.NameIdentifier, login.UserId.ToString()),
+                new(ClaimTypes.Name, login.Username),
+                new(ClaimTypes.Role, login.Role),
+                new(ApiClaims.Token, login.Token)
             };
 
-            // Create a claims identity and sign in the user
+            // The cookie expires together with the token, so nobody stays "logged in" with a dead token.
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(identity),
-                new AuthenticationProperties { IsPersistent = model.RememberMe });
+                new AuthenticationProperties
+                {
+                    IsPersistent = model.RememberMe,
+                    ExpiresUtc = DateTime.SpecifyKind(login.ExpiresAtUtc, DateTimeKind.Utc)
+                });
 
             // Redirect to the return URL if it's a local URL, otherwise redirect to the dashboard
             if (Url.IsLocalUrl(returnUrl)) return Redirect(returnUrl);
@@ -96,13 +99,23 @@ namespace Lagerverwaltung.Controllers
         }
 
         /// <summary>
-        /// Logout
+        /// Logout: revokes the token in the API (POST /api/auth/logout), then deletes the cookie.
         /// </summary>
         /// <returns></returns>
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> Logout()
         {
+            try
+            {
+                await _api.LogoutAsync();
+            }
+            catch (Exception ex) when (ex is ApiException or HttpRequestException)
+            {
+                // Token already expired or API down: the cookie is deleted anyway.
+                _logger.LogInformation(ex, "Logout at the API failed");
+            }
+
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Login");
         }

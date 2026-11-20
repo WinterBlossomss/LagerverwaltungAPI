@@ -1,21 +1,20 @@
-﻿using Lagerverwaltung.Models;
-using Lagerverwaltung.Services;
+﻿using Lagerverwaltung.Services;
+using Lagerverwaltung.Services.Api;
 using Lagerverwaltung.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Lagerverwaltung.Controllers
 {
     [Authorize(Roles = Rollen.Lehrer)]
     public class RueckgabeController : Controller
     {
-        private readonly LagerverwaltungssystemContext _db;
+        private readonly ApiClient _api;
         private readonly LagerService _lager;
 
-        public RueckgabeController(LagerverwaltungssystemContext db, LagerService lager)
+        public RueckgabeController(ApiClient api, LagerService lager)
         {
-            _db = db;
+            _api = api;
             _lager = lager;
         }
 
@@ -32,7 +31,7 @@ namespace Lagerverwaltung.Controllers
         }
 
         /// <summary>
-        /// Handles the POST request for returning items from a room. Validates the selected items and processes the return.
+        /// Books every selected item Labor -> Umbuchungslager (POST /api/returns, one request per item).
         /// </summary>
         /// <param name="vm">The view model containing the return information.</param>
         /// <returns>The action result.</returns>
@@ -44,26 +43,29 @@ namespace Lagerverwaltung.Controllers
             var auswahl = vm.Positionen.Where(p => p.Ausgewaehlt).ToList();
             if (!auswahl.Any()) ModelState.AddModelError("", "Bitte mindestens einen Gegenstand auswählen.");
 
-            // If the model state is valid, process the return of the selected items
             if (ModelState.IsValid)
             {
+                int gebucht = 0;
                 try
                 {
-                    // Process the return of each selected item
                     foreach (var p in auswahl)
-                        await _lager.ZurueckgebenAsync(vm.RaumId, p.ArtikelId, p.Menge, User.GetBenutzerId());
-                    await _lager.SpeichernAsync();
-                    // Set a temporary message indicating the number of items returned and redirect to the index page
+                    {
+                        await _api.CreateReturnAsync(vm.RaumId, p.ArtikelId, p.Menge);
+                        gebucht++;
+                    }
                     TempData["Meldung"] = $"{auswahl.Count} Position(en) ins Umbuchungslager gebucht. Der Administrator übernimmt sie ins Hauptlager.";
                     return RedirectToAction(nameof(Index), new { raumId = vm.RaumId });
                 }
-                catch (LagerException ex)
+                catch (ApiException ex) when (ex.IsUserError)
                 {
-                    ModelState.AddModelError("", ex.Message);
+                    // e.g. 409 "Nicht genügend Bestand vorhanden."
+                    ModelState.AddModelError("", gebucht == 0
+                        ? ex.Message
+                        : $"{gebucht} von {auswahl.Count} Position(en) wurden gebucht. Danach: {ex.Message}");
                 }
             }
 
-            // If the model state is not valid or an exception occurred, refill the view model and return the view
+            // If the model state is not valid or an error occurred, refill the view model and return the view
             if (!await BefuelleAsync(vm)) return Forbid();
             return View(vm);
         }
@@ -75,32 +77,27 @@ namespace Lagerverwaltung.Controllers
         /// <returns>A task representing the asynchronous operation.</returns>
         private async Task<bool> BefuelleAsync(RueckgabeViewModel vm)
         {
-            // Get the user ID of the currently logged-in user
-            var uid = User.GetBenutzerId();
-            vm.Labore = await _lager.GetLabore().Where(r => r.Benutzer == uid).ToListAsync();
+            // The API only returns the labs of the logged-in LehrerIn
+            vm.Labore = await _lager.GetLaboreAsync();
             if (!vm.Labore.Any()) return true;
 
             // Determine the selected room based on the provided room ID or default to the first available room
             var raum = vm.RaumId == 0 ? vm.Labore.First() : vm.Labore.FirstOrDefault(l => l.ID == vm.RaumId);
             if (raum == null) return false;
 
-            // Fill the view model with the selected room's ID and name, and retrieve the available items in that room
             vm.RaumId = raum.ID;
             vm.RaumName = raum.Anzeigename;
 
-            // Retrieve the open returns for the selected room, ordered by date and ID, and populate the view model's open returns
-            vm.OffeneRueckgaben = await _lager.OffeneRueckgaben()
+            // Open returns from this lab, newest first
+            vm.OffeneRueckgaben = (await _lager.OffeneRueckgabenAsync())
                 .Where(b => b.VonRaum == raum.ID)
                 .OrderByDescending(b => b.Datum).ThenByDescending(b => b.ID)
-                .ToListAsync();
+                .ToList();
 
             var gewaehlt = vm.Positionen.Where(p => p.Ausgewaehlt).ToDictionary(p => p.ArtikelId, p => p.Menge);
 
-            // Retrieve the items in the selected room, including their details and availability, and populate the view model's positions
-            vm.Positionen = (await _db.RaumArtikels
-                    .Include(ra => ra.ArtNavigation).ThenInclude(a => a.KategorieNavigation)
-                    .Where(ra => ra.Raum == raum.ID)
-                    .ToListAsync())
+            // Items in the selected lab
+            vm.Positionen = (await _lager.BestandAsync(raum))
                 .OrderBy(ra => ra.ArtNavigation.Name)
                 .Select(ra => new AuswahlPosition
                 {
@@ -113,30 +110,6 @@ namespace Lagerverwaltung.Controllers
                     Menge = gewaehlt.TryGetValue(ra.Art, out var m) ? m : 1
                 }).ToList();
             return true;
-        }
-
-        /// <summary>
-        /// Handles the POST request to cancel a return.
-        /// It attempts to cancel the return for the specified item and room, and provides feedback to the user.
-        /// </summary>
-        /// <param name="id">The ID of the return to cancel.</param>
-        /// <param name="raumId">The ID of the room where the return is taking place.</param>
-        /// <returns></returns>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Stornieren(int id, int raumId)
-        {
-            try
-            {
-                await _lager.RueckgabeStornierenAsync(id, User.GetBenutzerId());
-                await _lager.SpeichernAsync();
-                TempData["Meldung"] = "Rückgabe storniert. Der Gegenstand ist wieder im Labor.";
-            }
-            catch (LagerException ex)
-            {
-                TempData["Fehler"] = ex.Message;
-            }
-            return RedirectToAction(nameof(Index), new { raumId });
         }
     }
 }

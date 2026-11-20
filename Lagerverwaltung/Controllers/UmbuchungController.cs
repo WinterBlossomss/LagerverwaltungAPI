@@ -1,33 +1,32 @@
-﻿using Lagerverwaltung.Models;
-using Lagerverwaltung.Services;
+﻿using Lagerverwaltung.Services;
+using Lagerverwaltung.Services.Api;
 using Lagerverwaltung.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Lagerverwaltung.Controllers
 {
+    /// <summary>
+    /// Umbuchungslager. With the REST API, "Entgegennehmen" (POST /api/returns/{id}/accept) closes the return
+    /// AND books it into the Hauptlager in one step (Einbuchung), so there is no separate "Einbuchen" any more.
+    /// </summary>
     [Authorize(Roles = Rollen.Admin)]
     public class UmbuchungController : Controller
     {
-        private readonly LagerverwaltungssystemContext _db;
+        private readonly ApiClient _api;
         private readonly LagerService _lager;
 
-        public UmbuchungController(LagerverwaltungssystemContext db, LagerService lager)
+        public UmbuchungController(ApiClient api, LagerService lager)
         {
-            _db = db;
+            _api = api;
             _lager = lager;
         }
 
         public async Task<IActionResult> Index()
         {
             var umb = await _lager.GetLagerAsync(RaumTypen.Umbuchungslager);
-            var offen = await _lager.OffeneRueckgaben().OrderBy(b => b.Datum).ToListAsync();
-
-            var bestand = await _db.RaumArtikels
-                .Include(ra => ra.ArtNavigation)
-                .Where(ra => ra.Raum == umb.ID)
-                .ToListAsync();
+            var offen = (await _lager.OffeneRueckgabenAsync()).OrderBy(b => b.Datum).ToList();
+            var bestand = umb == null ? new() : await _lager.BestandAsync(umb);
 
             return View(new UmbuchungViewModel
             {
@@ -43,42 +42,24 @@ namespace Lagerverwaltung.Controllers
                     })
                     .OrderByDescending(b => b.Einbuchbar).ThenBy(b => b.Name)
                     .ToList(),
-                Eingebucht = await _db.Lagerbewegungens.MitDetails()
+                Eingebucht = (await _lager.BewegungenAsync())
                     .Where(b => b.BewegungNavigation.Name == BewegungArten.Einbuchung)
-                    .OrderByDescending(b => b.Datum).ThenByDescending(b => b.ID)
                     .Take(10)
-                    .ToListAsync()
+                    .ToList()
             });
         }
 
+        /// <summary>POST /api/returns/{id}/accept: Umbuchungslager -> Hauptlager, return closed.</summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Entgegennehmen(int id)
         {
             try
             {
-                await _lager.EntgegennehmenAsync(id);
-                await _lager.SpeichernAsync();
-                TempData["Meldung"] = "Rückgabe entgegengenommen. Sie kann jetzt ins Hauptlager gebucht werden.";
+                await _api.AcceptReturnAsync(id);
+                TempData["Meldung"] = "Rückgabe entgegengenommen und ins Hauptlager gebucht.";
             }
-            catch (LagerException ex)
-            {
-                TempData["Fehler"] = ex.Message;
-            }
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Einbuchen(int artikelId, int menge)
-        {
-            try
-            {
-                await _lager.EinbuchenAsync(artikelId, menge, User.GetBenutzerId());
-                await _lager.SpeichernAsync();
-                TempData["Meldung"] = $"{menge} Stück ins Hauptlager gebucht.";
-            }
-            catch (LagerException ex)
+            catch (ApiException ex) when (ex.IsUserError)
             {
                 TempData["Fehler"] = ex.Message;
             }

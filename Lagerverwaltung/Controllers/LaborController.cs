@@ -1,21 +1,17 @@
-﻿using Lagerverwaltung.Models;
-using Lagerverwaltung.Services;
+﻿using Lagerverwaltung.Services;
 using Lagerverwaltung.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace Lagerverwaltung.Controllers
 {
     [Authorize(Roles = Rollen.Admin + "," + Rollen.Lehrer)]
     public class LaborController : Controller
     {
-        private readonly LagerverwaltungssystemContext _db;
         private readonly LagerService _lager;
 
-        public LaborController(LagerverwaltungssystemContext db, LagerService lager)
+        public LaborController(LagerService lager)
         {
-            _db = db;
             _lager = lager;
         }
 
@@ -31,10 +27,8 @@ namespace Lagerverwaltung.Controllers
             var isAdmin = User.IsInRole(Rollen.Admin);
             var uid = User.GetBenutzerId();
 
-            // Admin sees everything, teachers only see their own
-            var labore = isAdmin
-                ? await _lager.GetLabore().ToListAsync()
-                : await _lager.GetLabore().Where(r => r.Benutzer == uid).ToListAsync();
+            // Admin sees everything, teachers only see their own (the API decides which rooms we get)
+            var labore = await _lager.GetLaboreAsync();
 
             // Create the view model with the list of labs and the search term
             var vm = new LaborViewModel { Auswahl = labore, Suche = suche };
@@ -44,11 +38,8 @@ namespace Lagerverwaltung.Controllers
             var raum = id == null ? labore.First() : labore.FirstOrDefault(l => l.ID == id);
             if (raum == null) return isAdmin ? NotFound() : Forbid();
 
-            // Get the inventory for the selected lab, including related article and category data
-            var bestand = await _db.RaumArtikels
-                .Include(ra => ra.ArtNavigation).ThenInclude(a => a.KategorieNavigation)
-                .Where(ra => ra.Raum == raum.ID)
-                .ToListAsync();
+            // Get the inventory for the selected lab
+            var bestand = await _lager.BestandAsync(raum);
 
             // Populate the view model with lab details and inventory statistics
             vm.Raum = raum;
@@ -66,15 +57,13 @@ namespace Lagerverwaltung.Controllers
                 .ToList();
 
             // Get the latest takeover date for each article in the selected lab and store it in a dictionary
-            vm.UebernommenAm = (await _db.Lagerbewegungens
-                    .Where(b => b.ZuRaum == raum.ID && b.BewegungNavigation.Name == BewegungArten.Uebernahme)
-                    .Select(b => new { b.Artikel, b.Datum })
-                    .ToListAsync())
+            vm.UebernommenAm = (await _lager.BewegungenAsync(raumId: raum.ID))
+                .Where(b => b.ZuRaum == raum.ID && b.BewegungNavigation.Name == BewegungArten.Uebernahme)
                 .GroupBy(b => b.Artikel)
                 .ToDictionary(g => g.Key, g => g.Max(x => x.Datum));
 
             // Get the list of open handovers for the selected lab, ordered by date
-            vm.OffeneUebergaben = await _lager.OffeneAusgaben().Where(b => b.ZuRaum == raum.ID).OrderBy(b => b.Datum).ToListAsync();
+            vm.OffeneUebergaben = (await _lager.OffeneAusgabenAsync()).Where(b => b.ZuRaum == raum.ID).OrderBy(b => b.Datum).ToList();
             vm.DarfBestaetigen = !isAdmin && raum.Benutzer == uid;
             vm.DarfZurueckgeben = !isAdmin && raum.Benutzer == uid;
 

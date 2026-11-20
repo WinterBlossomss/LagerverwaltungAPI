@@ -1,38 +1,50 @@
-using Lagerverwaltung.Models;
 using Lagerverwaltung.Services;
+using Lagerverwaltung.Services.Api;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 
 namespace Lagerverwaltung
 {
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            builder.Services.AddControllersWithViews();
+            // Block 2: no DbContext. All data comes from the REST API (Lagerverwaltung.Api).
+            var apiBaseUrl = builder.Configuration["Api:BaseUrl"]
+                ?? throw new InvalidOperationException("Setting 'Api:BaseUrl' not found (appsettings.json).");
 
-            builder.Services.AddScoped<IPasswordHasher<Benutzer>, PepperedPasswordHasher>();
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddTransient<BearerTokenHandler>();
+            builder.Services.AddHttpClient<ApiClient>(client =>
+                {
+                    client.BaseAddress = new Uri(apiBaseUrl.TrimEnd('/') + "/");
+                    client.Timeout = TimeSpan.FromSeconds(30);
+                })
+                .AddHttpMessageHandler<BearerTokenHandler>();
             builder.Services.AddScoped<LagerService>();
 
+            // The cookie only says "who is logged in" and carries the API token (claim "api_token").
+            // It expires together with the token (see AccountController.Login).
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
             .AddCookie(options =>
             {
                 options.LoginPath = "/Account/Login";
                 options.AccessDeniedPath = "/Account/AccessDenied";
+                options.SlidingExpiration = false;
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
             });
+
             builder.Services.AddControllersWithViews(o =>
-            o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
+            {
+                o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+                o.Filters.Add<ApiExceptionFilter>();   // 401/403/404/409 from the API -> login, access denied, 404, message
+            });
 
             builder.Services.AddAuthorization();
 
-            builder.Services.AddDbContext<LagerverwaltungssystemContext>(
-            options => options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
             var app = builder.Build();
-            await SeedService.SeedDatabase(app.Services);
 
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
