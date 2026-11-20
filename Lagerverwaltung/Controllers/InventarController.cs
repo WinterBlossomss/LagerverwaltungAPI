@@ -1,22 +1,21 @@
-﻿using Lagerverwaltung.Models;
-using Lagerverwaltung.Services;
+﻿using Lagerverwaltung.Services;
+using Lagerverwaltung.Services.Api;
 using Lagerverwaltung.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 
 namespace Lagerverwaltung.Controllers
 {
     [Authorize(Roles = Rollen.Admin)]
     public class InventarController : Controller
     {
-        private readonly LagerverwaltungssystemContext _db;
+        private readonly ApiClient _api;
         private readonly LagerService _lager;
 
-        public InventarController(LagerverwaltungssystemContext db, LagerService lager)
+        public InventarController(ApiClient api, LagerService lager)
         {
-            _db = db;
+            _api = api;
             _lager = lager;
         }
 
@@ -30,26 +29,28 @@ namespace Lagerverwaltung.Controllers
             // Trim the search string to avoid unnecessary whitespace issues
             var suche = vm.Suche?.Trim();
 
+            // All articles (the inventory lines don't contain the category ID, the article list does)
+            var artikel = (await _api.GetArticlesAsync()).ToDictionary(a => a.Id);
+
             // Local function to determine if an article matches the search criteria
-            bool Passt(Artikel a) =>
-                (string.IsNullOrEmpty(suche)
-                    || a.Name.Contains(suche, StringComparison.OrdinalIgnoreCase)
-                    || (a.SerienNum?.ToString().Contains(suche) ?? false))
-                && (vm.KategorieId == null || a.Kategorie == vm.KategorieId)
-                && (vm.Seriennummer != "mit" || a.SerienNum != null)
-                && (vm.Seriennummer != "ohne" || a.SerienNum == null);
+            bool Passt(int artikelId)
+            {
+                if (!artikel.TryGetValue(artikelId, out var a)) return false;
+                return (string.IsNullOrEmpty(suche)
+                        || a.Name.Contains(suche, StringComparison.OrdinalIgnoreCase)
+                        || (a.SerienNum?.ToString().Contains(suche) ?? false))
+                    && (vm.KategorieId == null || a.KategorieId == vm.KategorieId)
+                    && (vm.Seriennummer != "mit" || a.SerienNum != null)
+                    && (vm.Seriennummer != "ohne" || a.SerienNum == null);
+            }
 
             // Bestand in allen Räumen
-            var bestand = await _db.RaumArtikels
-                .Include(ra => ra.ArtNavigation).ThenInclude(a => a.KategorieNavigation)
-                .Include(ra => ra.ArtNavigation).ThenInclude(a => a.HerstellerNavigation)
-                .Include(ra => ra.RaumNavigation).ThenInclude(r => r.RaumTypNavigation)
-                .Include(ra => ra.RaumNavigation).ThenInclude(r => r.BenutzerNavigation)
-                .ToListAsync();
+            var raeume = await _lager.GetRaeumeAsync();
+            var bestand = await _lager.BestandAsync(raeume);
 
             // Filter the inventory based on the search criteria and map to InventarZeile
             var zeilen = bestand
-                .Where(ra => Passt(ra.ArtNavigation))
+                .Where(ra => Passt(ra.Art))
                 .Where(ra => vm.RaumId == null || ra.Raum == vm.RaumId)
                 .Where(ra => vm.LehrerId == null || (ra.RaumNavigation.RaumTypNavigation.Name == RaumTypen.Labor && ra.RaumNavigation.Benutzer == vm.LehrerId))
                 .Select(ra => new InventarZeile
@@ -72,20 +73,17 @@ namespace Lagerverwaltung.Controllers
                 }).ToList();
 
             // Gegenstände, die gerade unterwegs sind (Übergabe noch nicht bestätigt)
-            var unterwegs = await _lager.OffeneAusgaben()
-                .Include(b => b.ArtikelNavigation).ThenInclude(a => a.KategorieNavigation)
-                .Include(b => b.ArtikelNavigation).ThenInclude(a => a.HerstellerNavigation)
-                .ToListAsync();
+            var unterwegs = await _lager.OffeneAusgabenAsync();
             zeilen.AddRange(unterwegs
-                .Where(b => Passt(b.ArtikelNavigation))
+                .Where(b => Passt(b.Artikel))
                 .Where(b => vm.RaumId == null || b.ZuRaum == vm.RaumId)
                 .Where(b => vm.LehrerId == null || b.ZuRaumNavigation.Benutzer == vm.LehrerId)
                 .Select(b => new InventarZeile
                 {
                     ArtikelId = b.Artikel,
                     Name = b.ArtikelNavigation.Name,
-                    Kategorie = b.ArtikelNavigation.KategorieNavigation?.Name,
-                    Hersteller = b.ArtikelNavigation.HerstellerNavigation?.Name,
+                    Kategorie = artikel[b.Artikel].KategorieName,
+                    Hersteller = artikel[b.Artikel].HerstellerName,
                     SerienNum = b.ArtikelNavigation.SerienNum,
                     Standort = "→ " + b.ZuRaumNavigation.Anzeigename,
                     RaumId = b.ZuRaum,
@@ -99,12 +97,11 @@ namespace Lagerverwaltung.Controllers
             vm.GesamtPositionen = bestand.Count + unterwegs.Count;
 
             // Prepare the filter dropdowns for categories, rooms, and teachers
-            vm.Kategorien = await _db.Kategories.OrderBy(k => k.Name)
-                .Select(k => new SelectListItem(k.Name, k.ID.ToString())).ToListAsync();
-            vm.Raeume = (await _db.Raums.MitDetails().OrderBy(r => r.RaumTyp).ThenBy(r => r.RaumNum).ToListAsync())
-                .Select(r => new SelectListItem(r.Anzeigename, r.ID.ToString()));
-            vm.Lehrer = await _db.Benutzers.Where(b => b.RolleNavigation.Name == Rollen.Lehrer).OrderBy(b => b.Username)
-                .Select(b => new SelectListItem(b.Username, b.ID.ToString())).ToListAsync();
+            vm.Kategorien = (await _api.GetCategoriesAsync()).OrderBy(k => k.Name)
+                .Select(k => new SelectListItem(k.Name, k.Id.ToString())).ToList();
+            vm.Raeume = raeume.Select(r => new SelectListItem(r.Anzeigename, r.ID.ToString()));
+            vm.Lehrer = (await _api.GetUsersAsync()).Where(b => b.RoleName == Rollen.Lehrer).OrderBy(b => b.Username)
+                .Select(b => new SelectListItem(b.Username, b.Id.ToString())).ToList();
 
             return View(vm);
         }

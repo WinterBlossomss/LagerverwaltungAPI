@@ -1,29 +1,27 @@
-﻿using Lagerverwaltung.Models;
-using Lagerverwaltung.Services;
+﻿using Lagerverwaltung.Services;
 using Lagerverwaltung.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 
 namespace Lagerverwaltung.Controllers
 {
     [Authorize(Roles = Rollen.Admin)]
     public class BewegungenController : Controller
     {
-        private readonly LagerverwaltungssystemContext _db;
+        private readonly LagerService _lager;
 
-        public BewegungenController(LagerverwaltungssystemContext db) => _db = db;
+        public BewegungenController(LagerService lager) => _lager = lager;
 
         /// <summary>
         /// Displays a list of movements based on the provided filter criteria in the BewegungenViewModel.
+        /// The room filter is done by the API (GET /api/movements?raumId=), the others here.
         /// </summary>
         /// <param name="vm">The view model containing the filter criteria.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task<IActionResult> Index(BewegungenViewModel vm)
         {
-            // Start with a queryable collection of Lagerbewegungens, including related details.
-            var q = _db.Lagerbewegungens.MitDetails().AsQueryable();
+            IEnumerable<Models.Lagerbewegungen> q = await _lager.BewegungenAsync(raumId: vm.RaumId);
 
             // Apply filters based on the view model properties.
             if (!string.IsNullOrEmpty(vm.Art))
@@ -32,24 +30,18 @@ namespace Lagerverwaltung.Controllers
                 q = q.Where(b => b.IsDone != true);
             else if (vm.Status == "abgeschlossen")
                 q = q.Where(b => b.IsDone == true);
-            if (vm.RaumId != null)
-                q = q.Where(b => b.VonRaum == vm.RaumId || b.ZuRaum == vm.RaumId);
             if (!string.IsNullOrWhiteSpace(vm.Suche))
             {
                 var s = vm.Suche.Trim();
-                q = q.Where(b => b.ArtikelNavigation.Name.Contains(s)
-                    || b.BenutzerNavigation.Username.Contains(s)
-                    || (b.ArtikelNavigation.SerienNum != null && b.ArtikelNavigation.SerienNum.ToString()!.Contains(s)));
+                q = q.Where(b => b.ArtikelNavigation.Name.Contains(s, StringComparison.OrdinalIgnoreCase)
+                    || b.BenutzerNavigation.Username.Contains(s, StringComparison.OrdinalIgnoreCase)
+                    || (b.ArtikelNavigation.SerienNum?.ToString().Contains(s) ?? false));
             }
 
-            // Order the results by date and ID, and take the top 200 entries.
-            vm.Bewegungen = await q.OrderByDescending(b => b.Datum).ThenByDescending(b => b.ID).Take(200).ToListAsync();
-            // Populate the Arten and Raeume properties for the view model.
-            vm.Arten = await _db.BewegungArts.OrderBy(a => a.Name).Select(a => new SelectListItem(a.Name, a.Name)).ToListAsync();
-            // Populate the Raeume property with a list of rooms, ordered by type and number.
-            vm.Raeume = (await _db.Raums.MitDetails().OrderBy(r => r.RaumTyp).ThenBy(r => r.RaumNum).ToListAsync())
-                .Select(r => new SelectListItem(r.Anzeigename, r.ID.ToString()));
-            // Return the view with the populated view model.
+            // Newest first (already sorted by LagerService), top 200 entries.
+            vm.Bewegungen = q.Take(200).ToList();
+            vm.Arten = BewegungArten.Alle.Order().Select(a => new SelectListItem(a, a)).ToList();
+            vm.Raeume = (await _lager.GetRaeumeAsync()).Select(r => new SelectListItem(r.Anzeigename, r.ID.ToString()));
             return View(vm);
         }
     }

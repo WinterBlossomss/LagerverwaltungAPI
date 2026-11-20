@@ -1,22 +1,21 @@
-using Lagerverwaltung.Models;
 using Lagerverwaltung.Services;
+using Lagerverwaltung.Services.Api;
 using Lagerverwaltung.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 
 namespace Lagerverwaltung.Controllers
 {
     [Authorize(Roles = Rollen.Admin)]
     public class ArtikelController : Controller
     {
-        private readonly LagerverwaltungssystemContext _context;
+        private readonly ApiClient _api;
         private readonly LagerService _lager;
 
-        public ArtikelController(LagerverwaltungssystemContext context, LagerService lager)
+        public ArtikelController(ApiClient api, LagerService lager)
         {
-            _context = context;
+            _api = api;
             _lager = lager;
         }
 
@@ -27,21 +26,18 @@ namespace Lagerverwaltung.Controllers
         /// <returns>The action result.</returns>
         public async Task<IActionResult> Index(ArtikelListeViewModel vm)
         {
-            // Start with all articles, including their categories and manufacturers
-            var q = _context.Artikels.Include(a => a.KategorieNavigation).Include(a => a.HerstellerNavigation).AsQueryable();
+            // Category and manufacturer are filtered by the API; the search term also matches parts of the serial number
+            var artikel = await _api.GetArticlesAsync(vm.KategorieId, vm.HerstellerId);
             if (!string.IsNullOrWhiteSpace(vm.Suche))
             {
                 var s = vm.Suche.Trim();
-                q = q.Where(a => a.Name.Contains(s) || (a.SerienNum != null && a.SerienNum.ToString()!.Contains(s)));
+                artikel = artikel.Where(a => a.Name.Contains(s, StringComparison.OrdinalIgnoreCase)
+                    || (a.SerienNum?.ToString().Contains(s) ?? false)).ToList();
             }
-            if (vm.KategorieId != null) q = q.Where(a => a.Kategorie == vm.KategorieId);
-            if (vm.HerstellerId != null) q = q.Where(a => a.Hersteller == vm.HerstellerId);
 
             // Order the articles by name and then by serial number, and load them into the view model
-            vm.Artikel = await q.OrderBy(a => a.Name).ThenBy(a => a.SerienNum).ToListAsync();
-            vm.Gesamtbestand = await _context.RaumArtikels.GroupBy(r => r.Art)
-                .Select(g => new { g.Key, Summe = g.Sum(x => x.Menge) })
-                .ToDictionaryAsync(x => x.Key, x => x.Summe);
+            vm.Artikel = artikel.OrderBy(a => a.Name).ThenBy(a => a.SerienNum).Select(LagerService.ToArtikel).ToList();
+            vm.Gesamtbestand = artikel.ToDictionary(a => a.Id, a => a.Bestand);
             vm.Kategorien = await KategorienAsync();
             vm.Hersteller = await HerstellerAsync();
             return View(vm);
@@ -54,21 +50,15 @@ namespace Lagerverwaltung.Controllers
         /// <returns>The action result.</returns>
         public async Task<IActionResult> Details(int? id)
         {
-            // Validate the ID and retrieve the article from the database, returning NotFound if not found
             if (id == null) return NotFound();
-            var artikel = await _context.Artikels.Include(a => a.KategorieNavigation).Include(a => a.HerstellerNavigation)
-                .FirstOrDefaultAsync(a => a.ID == id);
-            if (artikel == null) return NotFound();
+            var artikel = LagerService.ToArtikel(await _api.GetArticleAsync(id.Value));   // 404 -> NotFound (ApiExceptionFilter)
 
-            // Retrieve the locations and movements of the article, including related data, and order the movements by date and ID
-            var standorte = await _context.RaumArtikels
-                .Include(r => r.RaumNavigation).ThenInclude(r => r.RaumTypNavigation)
-                .Include(r => r.RaumNavigation).ThenInclude(r => r.BenutzerNavigation)
-                .Where(r => r.Art == id).ToListAsync();
+            // Locations: the stock of every room, filtered to this article
+            var standorte = (await _lager.BestandAsync(await _lager.GetRaeumeAsync()))
+                .Where(r => r.Art == id).ToList();
 
-            // Retrieve the movements of the article, including related data, and order them by date and ID
-            var bewegungen = await _context.Lagerbewegungens.MitDetails()
-                .Where(b => b.Artikel == id).OrderByDescending(b => b.Datum).ThenByDescending(b => b.ID).ToListAsync();
+            // Movements of the article, newest first
+            var bewegungen = await _lager.BewegungenAsync(artikelId: id);
 
             // Return the view with the article details, locations, movements, and a flag indicating whether the article can be deleted
             return View(new ArtikelDetailsViewModel
@@ -92,7 +82,7 @@ namespace Lagerverwaltung.Controllers
         }
 
         /// <summary>
-        /// Handle the submission of the form to create a new article, validating the input and saving it to the database if valid.
+        /// Creates the article (POST /api/articles) and books the initial stock into the Hauptlager (POST /api/articles/{id}/stock).
         /// </summary>
         /// <param name="vm">The view model containing the article data.</param>
         /// <returns>The action result.</returns>
@@ -100,29 +90,40 @@ namespace Lagerverwaltung.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ArtikelFormViewModel vm)
         {
-            // Remove the validation for Anfangsbestand, since it is only relevant for new articles
-            await ValidiereAsync(vm);
             if (vm.SerienNum != null && vm.Anfangsbestand != 1)
                 ModelState.AddModelError(nameof(vm.Anfangsbestand), "Ein Gerät mit Seriennummer hat immer den Bestand 1.");
 
-            // Validate the model state and return the view with the categories if invalid
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-                await FuelleListenAsync(vm);
-                return View(vm);
+                int id;
+                try
+                {
+                    id = await _api.CreateArticleAsync(vm.Name.Trim(), vm.SerienNum, vm.KategorieId!.Value, vm.HerstellerId);
+                }
+                catch (ApiException ex) when (ex.IsUserError)
+                {
+                    // e.g. 409 "Diese Seriennummer ist bereits vergeben."
+                    ModelState.AddModelError(vm.SerienNum != null && ex.IsConflict ? nameof(vm.SerienNum) : "", ex.Message);
+                    await FuelleListenAsync(vm);
+                    return View(vm);
+                }
+
+                try
+                {
+                    await _api.AddStockAsync(id, vm.Anfangsbestand);
+                }
+                catch (ApiException ex) when (ex.IsUserError)
+                {
+                    TempData["Fehler"] = $"{vm.Name} wurde erfasst, aber der Anfangsbestand konnte nicht gebucht werden: {ex.Message}";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+
+                TempData["Meldung"] = $"{vm.Name} wurde erfasst und ins Hauptlager gebucht.";
+                return RedirectToAction(nameof(Index));
             }
 
-            // Artikel zuerst speichern, damit die Datenbank die ID (IDENTITY) vergibt; Zugang in derselben Transaktion
-            await using var tx = await _context.Database.BeginTransactionAsync();
-            var artikel = new Artikel { Name = vm.Name.Trim(), SerienNum = vm.SerienNum, Kategorie = vm.KategorieId!.Value, Hersteller = vm.HerstellerId };
-            _context.Artikels.Add(artikel);
-            await _context.SaveChangesAsync();
-            await _lager.ZugangAsync(artikel.ID, vm.Anfangsbestand, User.GetBenutzerId());
-            await _lager.SpeichernAsync();
-            await tx.CommitAsync();
-
-            TempData["Meldung"] = $"{vm.Name} wurde erfasst und ins Hauptlager gebucht.";
-            return RedirectToAction(nameof(Index));
+            await FuelleListenAsync(vm);
+            return View(vm);
         }
 
         /// <summary>
@@ -132,26 +133,23 @@ namespace Lagerverwaltung.Controllers
         /// <returns>The action result.</returns>
         public async Task<IActionResult> Edit(int? id)
         {
-            // Validate the ID and retrieve the article from the database, returning NotFound if not found
             if (id == null) return NotFound();
-            var artikel = await _context.Artikels.FindAsync(id);
-            if (artikel == null) return NotFound();
+            var artikel = await _api.GetArticleAsync(id.Value);
 
-            // Return the view with the article data and the list of categories for selection
             var vm = new ArtikelFormViewModel
             {
-                ID = artikel.ID,
+                ID = artikel.Id,
                 Name = artikel.Name,
                 SerienNum = artikel.SerienNum,
-                KategorieId = artikel.Kategorie,
-                HerstellerId = artikel.Hersteller
+                KategorieId = artikel.KategorieId,
+                HerstellerId = artikel.HerstellerId
             };
             await FuelleListenAsync(vm);
             return View(vm);
         }
 
         /// <summary>
-        /// Update an existing article with the provided data.
+        /// Update an existing article (PUT /api/articles/{id}).
         /// </summary>
         /// <param name="id">The ID of the article to update.</param>
         /// <param name="vm">The view model containing the updated article data.</param>
@@ -161,28 +159,25 @@ namespace Lagerverwaltung.Controllers
         public async Task<IActionResult> Edit(int id, ArtikelFormViewModel vm)
         {
             if (id != vm.ID) return NotFound();
-            var artikel = await _context.Artikels.FindAsync(id);
-            if (artikel == null) return NotFound();
 
             ModelState.Remove(nameof(vm.Anfangsbestand));
-            await ValidiereAsync(vm);
-            if (vm.SerienNum != null && await _context.RaumArtikels.Where(r => r.Art == id).SumAsync(r => r.Menge) > 1)
-                ModelState.AddModelError(nameof(vm.SerienNum), "Dieser Artikel hat einen Bestand größer 1 und kann keine Seriennummer bekommen.");
-
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-                await FuelleListenAsync(vm);
-                return View(vm);
+                try
+                {
+                    await _api.UpdateArticleAsync(id, vm.Name.Trim(), vm.SerienNum, vm.KategorieId!.Value, vm.HerstellerId);
+                    TempData["Meldung"] = "Änderungen gespeichert.";
+                    return RedirectToAction(nameof(Details), new { id });
+                }
+                catch (ApiException ex) when (ex.IsUserError && !ex.IsNotFound)
+                {
+                    // e.g. serial number already used, or stock > 1 for an article that should get a serial number
+                    ModelState.AddModelError(vm.SerienNum != null && ex.IsConflict ? nameof(vm.SerienNum) : "", ex.Message);
+                }
             }
 
-            artikel.Name = vm.Name.Trim();
-            artikel.SerienNum = vm.SerienNum;
-            artikel.Kategorie = vm.KategorieId!.Value;
-            artikel.Hersteller = vm.HerstellerId;
-            await _context.SaveChangesAsync();
-
-            TempData["Meldung"] = "Änderungen gespeichert.";
-            return RedirectToAction(nameof(Details), new { id });
+            await FuelleListenAsync(vm);
+            return View(vm);
         }
 
         /// <summary>
@@ -197,7 +192,7 @@ namespace Lagerverwaltung.Controllers
         }
 
         /// <summary>
-        /// Delete an existing article from the database, if it is not in use in any locations or movements.
+        /// Delete an article (DELETE /api/articles/{id}). The API refuses with 409 if it has stock or movements.
         /// </summary>
         /// <param name="id">The ID of the article to delete.</param>
         /// <returns>The action result.</returns>
@@ -205,41 +200,26 @@ namespace Lagerverwaltung.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var artikel = await _context.Artikels.FindAsync(id);
-            if (artikel == null) return NotFound();
-
-            var inVerwendung = await _context.RaumArtikels.AnyAsync(r => r.Art == id)
-                || await _context.Lagerbewegungens.AnyAsync(b => b.Artikel == id);
-            if (inVerwendung)
+            var artikel = await _api.GetArticleAsync(id);
+            try
             {
-                TempData["Fehler"] = "Der Artikel hat Bestand oder Lagerbewegungen und kann nicht gelöscht werden.";
+                await _api.DeleteArticleAsync(id);
+            }
+            catch (ApiException ex) when (ex.IsConflict)
+            {
+                TempData["Fehler"] = ex.Message;
                 return RedirectToAction(nameof(Details), new { id });
             }
 
-            _context.Artikels.Remove(artikel);
-            await _context.SaveChangesAsync();
             TempData["Meldung"] = $"{artikel.Name} wurde gelöscht.";
             return RedirectToAction(nameof(Index));
         }
 
         /// <summary>
-        /// Validate the article form view model, checking for duplicate serial numbers and adding model errors if necessary.
+        /// Categories for the dropdown, ordered by name.
         /// </summary>
-        /// <param name="vm">The article form view model to validate.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
-        private async Task ValidiereAsync(ArtikelFormViewModel vm)
-        {
-            if (vm.SerienNum != null && await _context.Artikels.AnyAsync(a => a.SerienNum == vm.SerienNum && a.ID != vm.ID))
-                ModelState.AddModelError(nameof(vm.SerienNum), "Diese Seriennummer ist bereits vergeben.");
-        }
-
-        /// <summary>
-        /// Get a list of categories from the database, ordered by name,
-        /// and return them as a list of SelectListItem objects for use in a dropdown menu.
-        /// </summary>
-        /// <returns>A task representing the asynchronous operation.</returns>
         private async Task<IEnumerable<SelectListItem>> KategorienAsync() =>
-            await _context.Kategories.OrderBy(k => k.Name).Select(k => new SelectListItem(k.Name, k.ID.ToString())).ToListAsync();
+            (await _api.GetCategoriesAsync()).OrderBy(k => k.Name).Select(k => new SelectListItem(k.Name, k.Id.ToString())).ToList();
 
         /// <summary>
         /// Fill both dropdown lists (categories and manufacturers) of the article form.
@@ -252,10 +232,9 @@ namespace Lagerverwaltung.Controllers
         }
 
         /// <summary>
-        /// Get a list of manufacturers from the database, ordered by name, and return them as a list of SelectListItem objects for use in a dropdown menu.
+        /// Manufacturers for the dropdown, ordered by name.
         /// </summary>
-        /// <returns></returns>
         private async Task<IEnumerable<SelectListItem>> HerstellerAsync() =>
-            await _context.Herstellers.OrderBy(h => h.Name).Select(h => new SelectListItem(h.Name, h.ID.ToString())).ToListAsync();
+            (await _api.GetManufacturersAsync()).OrderBy(h => h.Name).Select(h => new SelectListItem(h.Name, h.Id.ToString())).ToList();
     }
 }

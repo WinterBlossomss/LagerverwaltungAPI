@@ -13,7 +13,7 @@
     var anzahlRueckgaben = isAdmin ? await Lager.AnzahlOffeneRueckgabenAsync() : 0;
 
     // total number of open handovers
-    var anzahlUebergaben = isLehrer ? await Lager.AnzahlOffeneUebergabenAsync(User.GetBenutzerId()) : 0;
+    var anzahlUebergaben = isLehrer ? await Lager.AnzahlOffeneUebergabenAsync() : 0;
 
     //returns active if user is in the InventarController
     string Aktiv(string c, string a = null) => controller == c && (a == null || action == a) ? "active" : "";

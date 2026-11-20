@@ -12,7 +12,7 @@
 
 <div class="row g-0 stat-row mb-4">
     <div class="col-4 stat"><div class="stat-label">1 · Zurückgegeben</div><div class="stat-value text-danger">@Model.OffeneRueckgaben.Count</div></div>
-    <div class="col-4 stat"><div class="stat-label">2 · Entgegengenommen</div><div class="stat-value">@Model.Bestand.Sum(b => b.Einbuchbar)</div></div>
+    <div class="col-4 stat"><div class="stat-label">2 · Im Umbuchungslager</div><div class="stat-value">@Model.Bestand.Sum(b => b.Menge)</div></div>
     <div class="col-4 stat"><div class="stat-label">3 · Zuletzt eingebucht</div><div class="stat-value">@Model.Eingebucht.Count</div></div>
 </div>
 
@@ -49,7 +49,7 @@ else
                         <td>@b.BenutzerNavigation.Username</td>
                         <td class="text-end">
                             <form asp-action="Entgegennehmen" asp-route-id="@b.ID" method="post">
-                                <button type="submit" class="btn btn-outline-primary btn-sm">Entgegennehmen</button>
+                                <button type="submit" class="btn btn-outline-primary btn-sm">Entgegennehmen &amp; einbuchen</button>
                             </form>
                         </td>
                     </tr>
@@ -88,22 +88,11 @@ else
                         <td>
                             @if (b.Einbuchbar > 0)
                             {
-                                <form asp-action="Einbuchen" method="post" class="d-flex gap-2 justify-content-end">
-                                    <input type="hidden" name="artikelId" value="@b.ArtikelId" />
-                                    @if (b.SerienNum == null)
-                                    {
-                                        <input type="number" name="menge" value="@b.Einbuchbar" min="1" max="@b.Einbuchbar" class="form-control form-control-sm" style="width:5rem" />
-                                    }
-                                    else
-                                    {
-                                        <input type="hidden" name="menge" value="1" />
-                                    }
-                                    <button type="submit" class="btn btn-primary btn-sm text-nowrap">Ins Hauptlager buchen</button>
-                                </form>
+                                <span class="small text-body-secondary d-block text-end">Ohne offene Rückgabe, über die API nicht einbuchbar</span>
                             }
                             else
                             {
-                                <span class="small text-body-secondary d-block text-end">Rückgabe erst entgegennehmen</span>
+                                <span class="small text-body-secondary d-block text-end">Wird beim Entgegennehmen eingebucht</span>
                             }
                         </td>
                     </tr>

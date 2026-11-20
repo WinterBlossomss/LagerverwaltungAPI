@@ -5,7 +5,15 @@
 
 <div class="mb-3">
     <label asp-for="Username" class="form-label"></label>
-    <input asp-for="Username" class="form-control" autocomplete="off" />
+    @if (Model.IstNeu)
+    {
+        <input asp-for="Username" class="form-control" autocomplete="off" />
+    }
+    else
+    {
+        <input asp-for="Username" class="form-control" readonly />
+        <div class="form-text">Benutzername und Passwort ändert über die REST-API nur der Benutzer selbst.</div>
+    }
     <span asp-validation-for="Username" class="text-danger small"></span>
 </div>
 
@@ -22,19 +30,15 @@
     <select asp-for="LaborId" asp-items="Model.Labore" class="form-select">
         <option value="">– kein Labor –</option>
     </select>
-    <div class="form-text">Pflicht für LehrerInnen. Ein Labor, das bereits vergeben ist, wird umgehängt.</div>
+    <div class="form-text">Nur für LehrerInnen. Ein Labor, das bereits vergeben ist, wird umgehängt. Ein neues Labor wird unter Räume angelegt.</div>
     <span asp-validation-for="LaborId" class="text-danger small"></span>
 </div>
  
-<div class="mb-3">
-    <label asp-for="Password" class="form-label"></label>
-    @if (Model.IstNeu)
-    {
+@if (Model.IstNeu)
+{
+    <div class="mb-3">
+        <label asp-for="Password" class="form-label"></label>
         <input asp-for="Password" class="form-control" autocomplete="new-password" required />
-    }
-    else
-    {
-        <input asp-for="Password" class="form-control" autocomplete="new-password" value="" />
-    }
-    <span asp-validation-for="Password" class="text-danger small"></span>
-</div>
+        <span asp-validation-for="Password" class="text-danger small"></span>
+    </div>
+}

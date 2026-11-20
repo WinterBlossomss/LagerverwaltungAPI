@@ -1,10 +1,10 @@
 using Lagerverwaltung.Models;
 using Lagerverwaltung.Services;
+using Lagerverwaltung.Services.Api;
 using Lagerverwaltung.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 
 namespace Lagerverwaltung.Controllers
 {
@@ -14,11 +14,13 @@ namespace Lagerverwaltung.Controllers
     [Authorize(Roles = Rollen.Admin)]
     public class RaumController : Controller
     {
-        private readonly LagerverwaltungssystemContext _context;
+        private readonly ApiClient _api;
+        private readonly LagerService _lager;
 
-        public RaumController(LagerverwaltungssystemContext context)
+        public RaumController(ApiClient api, LagerService lager)
         {
-            _context = context;
+            _api = api;
+            _lager = lager;
         }
 
         /// <summary>
@@ -26,23 +28,27 @@ namespace Lagerverwaltung.Controllers
         /// </summary>
         public async Task<IActionResult> Index(RaumListeViewModel vm)
         {
-            var q = _context.Raums.Where(r => r.RaumTypNavigation.Name == RaumTypen.Labor);
+            IEnumerable<Raum> labore = await _lager.GetLaboreAsync();
             if (!string.IsNullOrWhiteSpace(vm.Suche))
             {
                 var s = vm.Suche.Trim();
-                q = q.Where(r => r.RaumNum.ToString().Contains(s) || r.BenutzerNavigation.Username.Contains(s));
+                labore = labore.Where(r => (r.RaumNum?.ToString().Contains(s) ?? false)
+                    || r.BenutzerNavigation.Username.Contains(s, StringComparison.OrdinalIgnoreCase));
             }
 
-            vm.Raeume = await q.OrderBy(r => r.RaumNum)
+            var liste = labore.OrderBy(r => r.RaumNum).ToList();
+            var bestand = await _lager.BestandAsync(liste);
+
+            vm.Raeume = liste
                 .Select(r => new RaumZeile
                 {
                     ID = r.ID,
                     RaumNum = r.RaumNum,
                     Verantwortlich = r.BenutzerNavigation.Username,
-                    Positionen = r.RaumArtikels.Count(),
-                    Stueck = r.RaumArtikels.Sum(ra => (int?)ra.Menge) ?? 0
+                    Positionen = bestand.Count(b => b.Raum == r.ID),
+                    Stueck = bestand.Where(b => b.Raum == r.ID).Sum(b => b.Menge)
                 })
-                .ToListAsync();
+                .ToList();
             return View(vm);
         }
 
@@ -56,29 +62,27 @@ namespace Lagerverwaltung.Controllers
             return View(vm);
         }
 
+        /// <summary>POST /api/locations with RaumTyp "Labor".</summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(RaumFormViewModel vm)
         {
-            await ValidiereAsync(vm);
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-                await FuelleListenAsync(vm);
-                return View(vm);
+                try
+                {
+                    await _api.CreateRoomAsync(RaumTypen.Labor, vm.BenutzerId!.Value, vm.RaumNum);
+                    TempData["Meldung"] = $"Raum {vm.RaumNum} wurde angelegt.";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (ApiException ex) when (ex.IsUserError)
+                {
+                    ModelState.AddModelError(FeldFuer(ex), ex.Message);
+                }
             }
 
-            var laborTyp = await _context.RaumTyps.FirstAsync(t => t.Name == RaumTypen.Labor);
-            var raum = new Raum
-            {
-                RaumTyp = laborTyp.ID,
-                RaumNum = vm.RaumNum,
-                Benutzer = vm.BenutzerId!.Value
-            };
-            _context.Raums.Add(raum);
-            await _context.SaveChangesAsync();
-
-            TempData["Meldung"] = $"Raum {raum.RaumNum} wurde angelegt.";
-            return RedirectToAction(nameof(Index));
+            await FuelleListenAsync(vm);
+            return View(vm);
         }
 
         /// <summary>
@@ -95,6 +99,10 @@ namespace Lagerverwaltung.Controllers
             return View(vm);
         }
 
+        /// <summary>
+        /// The API changes the room number (PUT /api/locations/{id}) and the responsible LehrerIn
+        /// (PUT /api/locations/{id}/teacher) separately, so only what changed is sent.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, RaumFormViewModel vm)
@@ -103,19 +111,26 @@ namespace Lagerverwaltung.Controllers
             var raum = await LaborAsync(id);
             if (raum == null) return NotFound();
 
-            await ValidiereAsync(vm);
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-                await FuelleListenAsync(vm);
-                return View(vm);
+                try
+                {
+                    if (vm.RaumNum != raum.RaumNum)
+                        await _api.UpdateRoomAsync(id, vm.RaumNum);
+                    if (vm.BenutzerId != raum.Benutzer)
+                        await _api.AssignTeacherAsync(id, vm.BenutzerId!.Value);
+
+                    TempData["Meldung"] = $"Raum {vm.RaumNum} wurde gespeichert.";
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (ApiException ex) when (ex.IsUserError && !ex.IsNotFound)
+                {
+                    ModelState.AddModelError(FeldFuer(ex), ex.Message);
+                }
             }
 
-            raum.RaumNum = vm.RaumNum;
-            raum.Benutzer = vm.BenutzerId!.Value;
-            await _context.SaveChangesAsync();
-
-            TempData["Meldung"] = $"Raum {raum.RaumNum} wurde gespeichert.";
-            return RedirectToAction(nameof(Index));
+            await FuelleListenAsync(vm);
+            return View(vm);
         }
 
         /// <summary>
@@ -130,11 +145,12 @@ namespace Lagerverwaltung.Controllers
             return View(new RaumDetailsViewModel
             {
                 Raum = raum,
-                Positionen = await _context.RaumArtikels.CountAsync(ra => ra.Raum == raum.ID),
-                HatBewegungen = await HatBewegungenAsync(raum.ID)
+                Positionen = (await _lager.BestandAsync(raum)).Count,
+                HatBewegungen = (await _lager.BewegungenAsync(raumId: raum.ID)).Any()
             });
         }
 
+        /// <summary>DELETE /api/locations/{id}. 409 if the room has stock or history.</summary>
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -142,61 +158,45 @@ namespace Lagerverwaltung.Controllers
             var raum = await LaborAsync(id);
             if (raum == null) return NotFound();
 
-            if (await _context.RaumArtikels.AnyAsync(ra => ra.Raum == id) || await HatBewegungenAsync(id))
+            try
             {
-                TempData["Fehler"] = $"Raum {raum.RaumNum} hat Bestand oder Lagerbewegungen und kann nicht gelöscht werden.";
+                await _api.DeleteRoomAsync(id);
+            }
+            catch (ApiException ex) when (ex.IsConflict)
+            {
+                TempData["Fehler"] = $"Raum {raum.RaumNum}: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
 
-            _context.Raums.Remove(raum);
-            await _context.SaveChangesAsync();
             TempData["Meldung"] = $"Raum {raum.RaumNum} wurde gelöscht.";
             return RedirectToAction(nameof(Index));
         }
 
-        /// <summary>
-        /// Checks that the room number is unique among laboratories and that the responsible user has no other laboratory.
-        /// </summary>
-        private async Task ValidiereAsync(RaumFormViewModel vm)
-        {
-            if (vm.RaumNum != null &&
-                await _context.Raums.AnyAsync(r => r.RaumTypNavigation.Name == RaumTypen.Labor && r.RaumNum == vm.RaumNum && r.ID != vm.ID))
-                ModelState.AddModelError(nameof(vm.RaumNum), "Diese Raumnummer ist bereits vergeben.");
-
-            if (vm.BenutzerId != null)
-            {
-                var benutzer = await _context.Benutzers.Include(b => b.RolleNavigation).FirstOrDefaultAsync(b => b.ID == vm.BenutzerId);
-                if (benutzer == null)
-                    ModelState.AddModelError(nameof(vm.BenutzerId), "Benutzer nicht gefunden.");
-                else if (await _context.Raums.AnyAsync(r => r.RaumTypNavigation.Name == RaumTypen.Labor && r.Benutzer == vm.BenutzerId && r.ID != vm.ID))
-                    ModelState.AddModelError(nameof(vm.BenutzerId), $"{benutzer.Username} ist bereits für ein anderes Labor verantwortlich.");
-            }
-        }
+        /// <summary>Puts the API message next to the form field it is about.</summary>
+        private static string FeldFuer(ApiException ex) =>
+            ex.Message.Contains("Raumnummer") ? nameof(RaumFormViewModel.RaumNum)
+            : ex.Message.Contains("LehrerIn") || ex.Message.Contains("Benutzer") ? nameof(RaumFormViewModel.BenutzerId)
+            : "";
 
         /// <summary>
-        /// Fills the dropdown with users that can be responsible: LehrerInnen without a laboratory and the logged-in administrator.
+        /// Fills the dropdown with users that can be responsible: LehrerInnen without a laboratory
+        /// (the API only allows a LehrerIn, and only one lab per LehrerIn).
         /// The current responsible user of the edited laboratory is always included.
         /// </summary>
         private async Task FuelleListenAsync(RaumFormViewModel vm)
         {
-            var adminId = User.GetBenutzerId();
-            vm.Verantwortliche = await _context.Benutzers
-                .Where(b => b.RolleNavigation.Name == Rollen.Lehrer || b.ID == adminId || b.ID == vm.BenutzerId)
-                .Where(b => !b.Raums.Any(r => r.RaumTypNavigation.Name == RaumTypen.Labor && r.ID != vm.ID) || b.ID == adminId)
-                .OrderBy(b => b.RolleNavigation.Name != Rollen.Lehrer).ThenBy(b => b.Username)
+            var labore = await _lager.GetLaboreAsync();
+            vm.Verantwortliche = (await _api.GetUsersAsync())
+                .Where(b => b.RoleName == Rollen.Lehrer || b.Id == vm.BenutzerId)
+                .Where(b => !labore.Any(r => r.Benutzer == b.Id && r.ID != vm.ID))
+                .OrderBy(b => b.RoleName != Rollen.Lehrer).ThenBy(b => b.Username)
                 .Select(b => new SelectListItem(
-                    b.RolleNavigation.Name == Rollen.Lehrer ? b.Username : b.Username + " (Administrator, vorläufig)",
-                    b.ID.ToString()))
-                .ToListAsync();
+                    b.RoleName == Rollen.Lehrer ? b.Username : $"{b.Username} ({b.RoleName})",
+                    b.Id.ToString()))
+                .ToList();
         }
 
-        private Task<Raum> LaborAsync(int id) =>
-            _context.Raums
-                .Include(r => r.BenutzerNavigation)
-                .Include(r => r.RaumTypNavigation)
-                .FirstOrDefaultAsync(r => r.ID == id && r.RaumTypNavigation.Name == RaumTypen.Labor);
-
-        private Task<bool> HatBewegungenAsync(int raumId) =>
-            _context.Lagerbewegungens.AnyAsync(b => b.VonRaum == raumId || b.ZuRaum == raumId);
+        private async Task<Raum?> LaborAsync(int id) =>
+            (await _lager.GetLaboreAsync()).FirstOrDefault(r => r.ID == id);
     }
 }
