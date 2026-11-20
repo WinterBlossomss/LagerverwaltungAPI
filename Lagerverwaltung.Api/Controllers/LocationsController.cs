@@ -8,7 +8,9 @@ namespace Lagerverwaltung.Api.Controllers
     [Route("api/locations")]
     public class LocationsController : ApiControllerBase
     {
-        public LocationsController(LagerverwaltungssystemContext context) : base(context) { }
+        public LocationsController(LagerverwaltungssystemContext context) : base(context)
+        {
+        }
 
         /// <summary>GET /api/locations  (Administrator)</summary>
         [HttpGet]
@@ -16,7 +18,7 @@ namespace Lagerverwaltung.Api.Controllers
 
         /// <summary>GET /api/locations/mine  (logged in): the rooms I am responsible for.</summary>
         [HttpGet("mine")]
-        public async Task<IActionResult> GetMine() => await Run(async () => Ok(await Db.spGetOwnRoomsAsync(TokenHash)));
+        public async Task<IActionResult> GetMine() => Ok(new { items = await Db.spGetOwnRoomsAsync(TokenHash) });
 
         /// <summary>POST /api/locations  (Administrator)</summary>
         [HttpPost]
